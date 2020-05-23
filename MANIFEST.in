@@ -1,0 +1,2 @@
+include alembic.ini
+recursive-include migrations *.py

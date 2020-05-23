@@ -5,10 +5,11 @@ from sanic_cors import CORS
 from .route import add_routes
 from .config import configure_app
 from .middleware import add_middlewares
-
+from . import default_settings
 
 def make_app():
     app = Sanic("fdx", load_env="FPX_")
+    app.config.from_object(default_settings)
     app.config.from_envvar("FPX_CONFIG")
     CORS(app)
     configure_app(app)
