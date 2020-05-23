@@ -17,10 +17,12 @@ entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.0.0dev4",
+    version="0.0.1",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",
+    url='https://github.com/DataShades/fpx',
+
     license="AGPL",
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
