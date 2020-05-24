@@ -1,6 +1,6 @@
 from functools import wraps
 from fpx.model import Client
-from sanic import exceptions
+from sanic import response
 
 
 def client_only(handler):
@@ -9,9 +9,9 @@ def client_only(handler):
         id = request.headers.get("authorize")
         client = request.ctx.db.query(Client).get(id)
         if client is None:
-            raise exceptions.Unauthorized(
-                "Only clients authorized to use this endpoint"
-            )
+            return response.json({
+                'error': "Only clients authorized to use this endpoint"
+            }, 401)
         return handler(request, *args, **kwargs)
 
     return wrapper

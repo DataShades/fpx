@@ -3,13 +3,12 @@ import asyncio
 import json
 
 from collections import deque
-from sanic import Blueprint, response, request, exceptions, websocket
+from sanic import Blueprint, response, request, websocket
 
 from fpx.model import Client, Ticket
 from fpx import utils, decorator
 
 log = logging.getLogger(__name__)
-
 
 def add_routes(app):
     app.blueprint(ticket)
@@ -46,11 +45,9 @@ async def download(request: request.Request, id: str):
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        raise exceptions.NotFound("Ticket not found")
+        return response.json({'error': 'Ticket not found'}, 404)
     if not ticket.is_available:
-        raise exceptions.abort(
-            403, "You must wait untill download is available"
-        )
+        return response.json({'error': "You must wait untill download is available"}, 403)
 
     async def stream_fn(response):
         with utils.ActiveDownload(request.app.active_downloads, id):
@@ -71,11 +68,12 @@ async def wait(
     active = request.app.active_downloads
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        raise exceptions.NotFound("Ticket not found")
+        return response.json({'error': 'Ticket not found'}, 404)
 
     def _position():
+        offset = q.index(id) if id in q else 0
         return (
-            q.index(id) + len(active)
+            offset + len(active)
             - request.app.config.SIMULTANEOURS_DOWNLOADS_LIMIT
         )
 
@@ -87,32 +85,32 @@ async def wait(
         )
 
     position = _position()
-    if position <= 0:
+    if position < 0:
         ticket.is_available = True
         db.commit()
     await send_position(position)
     if ticket.is_available:
         log.debug(f"Ticket {id} is already available. Closing connection")
-        await ws.close()
+        await ws.close(reason="available")
         return
 
     if id in q:
         log.debug(f"{id} already in queue as position {q.index(id)}: {q}")
         await ws.send(json.dumps({"error": "Already waiting"}))
         log.debug("Closing connection")
-        await ws.close()
+        await ws.close(reason="aleready in queue")
         return
 
     @utils.on_download_started.connect
     @utils.on_download_completed.connect
     async def download_listener(sender, **kwargs):
         position = _position()
-        if position <= 0:
+        if position < 0:
             ticket.is_available = True
             db.commit()
         await send_position(position)
         if ticket.is_available:
-            await ws.close()
+            await ws.close(reason="available")
 
     q.append(id)
     log.debug(f"Appended {id} to download queue: {q}")
