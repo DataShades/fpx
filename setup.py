@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from glob import glob
 
-with open("README.md", "r") as fh:
+with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 install_requires = [
@@ -17,7 +17,7 @@ entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.0.1",
+    version="0.0.3",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",
@@ -42,8 +42,5 @@ setup(
     package_data={
         '': ['alembic.ini', 'migrations/**/*']
     }
-        # ('', ['data/alembic.ini']),
-        # ('migrations', ),
-        # ('migrations/versions', glob('data/migrations/versions/*.py')),
 
 )

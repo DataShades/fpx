@@ -47,10 +47,7 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
         async for name, content in stream_downloaded_files(ticket.items):
             z_info = ZipInfo(name, time.gmtime()[:6])
             with zf.open(z_info, mode="w") as dest:
-                while True:
-                    chunk = await content.read(chunk_size)
-                    if not chunk:
-                        break
+                async for chunk in content.iter_chunked(chunk_size):
                     dest.write(chunk)
                     yield stream.get()
         zf.comment = b"Written by FPX"
@@ -61,7 +58,7 @@ async def stream_downloaded_files(urls):
     async with aiohttp.ClientSession() as session:
         for url in urls:
             try:
-                async with session.get(url, chunked=True) as resp:
+                async with session.get(url) as resp:
                     yield os.path.basename(url), resp.content
             except ClientError:
                 log.exception(f"Failed on {url}")

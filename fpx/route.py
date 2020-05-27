@@ -1,3 +1,4 @@
+
 import logging
 import asyncio
 import json
@@ -35,7 +36,6 @@ def generate(request: request.Request):
             id=ticket.id,
             items=ticket.items,
             type=ticket.type,
-            download_url=request.url_for("ticket.download", id=ticket.id),
         )
     )
 
@@ -51,10 +51,10 @@ async def download(request: request.Request, id: str):
 
     async def stream_fn(response):
         with utils.ActiveDownload(request.app.active_downloads, id):
+            db.delete(ticket)
+            db.commit()
             async for chunk in utils.stream_ticket(ticket):
                 await response.write(chunk)
-        db.delete(ticket)
-        db.commit()
 
     return response.stream(stream_fn, content_type="application/zip")
 
@@ -71,7 +71,7 @@ async def wait(
         return response.json({'error': 'Ticket not found'}, 404)
 
     def _position():
-        offset = q.index(id) if id in q else 0
+        offset = q.index(id) if id in q else len(q)
         return (
             offset + len(active)
             - request.app.config.SIMULTANEOURS_DOWNLOADS_LIMIT
