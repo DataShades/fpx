@@ -17,7 +17,7 @@ entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.0.3",
+    version="0.0.4",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",

@@ -56,7 +56,10 @@ async def download(request: request.Request, id: str):
             async for chunk in utils.stream_ticket(ticket):
                 await response.write(chunk)
 
-    return response.stream(stream_fn, content_type="application/zip")
+    return response.stream(
+        stream_fn, content_type="application/zip",
+        headers={'content-disposition': 'attachment; filename="collection.zip"'}
+    )
 
 
 @ticket.websocket("/<id>/wait")
