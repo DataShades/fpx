@@ -28,7 +28,8 @@ def generate(request: request.Request):
     for field in required_fields:
         if field not in request.json:
             return response.json({"error": f'missing "{field}" field'}, 409)
-    ticket = Ticket(request.json["type"], request.json["items"])
+    items = request.json["items"]
+    ticket = Ticket(request.json["type"], items)
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
     return response.json(

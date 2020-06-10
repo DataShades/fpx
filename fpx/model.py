@@ -48,7 +48,7 @@ class Ticket(Base):
         self.content = json.dumps(value)
 
 
-def make_app_session(app: Sanic):
+def make_db_session(app: Sanic):
     engine = create_engine(app.config.DB_URL)
     Session.configure(bind=engine)
     app.DbSession = Session

@@ -44,8 +44,8 @@ class Stream(RawIOBase):
 async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
     stream = Stream()
     with ZipFile(stream, mode="w",) as zf:
-        async for name, content in stream_downloaded_files(ticket.items):
-            z_info = ZipInfo(name, time.gmtime()[:6])
+        async for path, name, content in stream_downloaded_files(ticket.items):
+            z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
             with zf.open(z_info, mode="w") as dest:
                 async for chunk in content.iter_chunked(chunk_size):
                     dest.write(chunk)
@@ -54,12 +54,21 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
     yield stream.get()
 
 
-async def stream_downloaded_files(urls):
+async def stream_downloaded_files(items):
     async with aiohttp.ClientSession() as session:
-        for url in urls:
+        for item in items:
+            name = None,
+            path = ''
+            if isinstance(item, dict):
+                url = item['url']
+                path = item.get('path', path)
+                name = item.get('name') or os.path.basename(url)
+            else:
+                url = item
+                name = os.path.basename(url)
             try:
                 async with session.get(url) as resp:
-                    yield os.path.basename(url), resp.content
+                    yield path, name, resp.content
             except ClientError:
                 log.exception(f"Failed on {url}")
 

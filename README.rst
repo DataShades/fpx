@@ -1,8 +1,10 @@
 FPX
 ===
 
+Standalone service for collecting content from multiple source into single file. Typical usecase is downloading multiple files as archive using single link. Internally FPX fetches content from the specified set of URLs and streams zip-compressed stream to the end users.
+
 AWS EC2 Deploy
----
+--------------
 
 1. Install Python 3.8 or newer::
 
@@ -33,16 +35,16 @@ AWS EC2 Deploy
 
      echo '
 
-     PORT = 8000
+     PORT = 12321
 
      # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service.
      # If you planning to use multiple instances + load balancer, consider using PostgreSQL
      DB_URL = "sqlite:////etc/ckan/default/fpx.db"
 
-     # Maximum number of simultaneous downloads. 2 is used only for testing.
+     # Maximum number of simultaneous downloads.
      # In production, value between 10 and 100 should be used, depending on server's bandwidth.
-     # Higher value won't create any performance penalty.
-     SIMULTANEOURS_DOWNLOADS_LIMIT = 2
+     # Higher value won't affect server perfomance, but will make downloads slower due to bandwidth limitations.
+     SIMULTANEOURS_DOWNLOADS_LIMIT = 20
      ' > /etc/ckan/default/fpx.py
 
 4. Initialize database and create access token for client. It can be
@@ -50,7 +52,7 @@ AWS EC2 Deploy
 
      export FPX_CONFIG=/etc/ckan/default/fpx.py
      fpx db up
-     fpx client add link-digital  # use any name instead of `link-digital`
+     fpx client add my-first-fpx-client  # use any name, that match `[\w_-]`
 
 5. Test service::
 
@@ -59,9 +61,42 @@ AWS EC2 Deploy
      FPX_CONFIG=/etc/ckan/default/fpx.py python -m fpx
 
 6. Configure system.d/supervisor/etc. unit for fpx. Make sure, that
-   `fpx server run` command, that spins up the service executed using
-   python>=3,8 (`pyenv shell 3.8.2`) and, if SQLite is used, fpx
-   process requires write access to db file.
+   `fpx server run` command, that spins up the service is executed using
+   python>=3.6 (`pyenv shell 3.8.2`). And, if SQLite is used, fpx
+   process has write access to db file::
+
+     [program:fpx-worker]
+
+     ; Use the full paths to the virtualenv and your configuration file here.
+     command=/usr/lib/ckan/fpx/bin/python -m fpx
+
+     environment=FPX_CONFIG=/etc/ckan/default/fpx.py
+
+     ; User the worker runs as.
+     user=apache
+
+     ; Start just a single worker. Increase this number if you have many or
+     ; particularly long running background jobs.
+     numprocs=1
+     process_name=%(program_name)s-%(process_num)02d
+
+     ; Log files.
+     stdout_logfile=/var/log/fpx-worker.log
+     stderr_logfile=/var/log/fpx-worker.log
+
+     ; Make sure that the worker is started on system start and automatically
+     ; restarted if it crashes unexpectedly.
+     autostart=true
+     autorestart=true
+
+     ; Number of seconds the process has to run before it is considered to have
+     ; started successfully.
+     startsecs=10
+
+     ; Need to wait for currently executing tasks to finish at shutdown.
+     ; Increase this if you have very long running tasks.
+     stopwaitsecs = 600
+
 
 7. FPX service must be available via public url(and CKAN ini file
    requires this URL under `fpx.service.url` config option). As
@@ -71,3 +106,18 @@ AWS EC2 Deploy
    Nginx, following link may be useful -
    https://sanic.readthedocs.io/en/latest/sanic/nginx.html#nginx-configuration
    . Note, FPX is using websockets(if it can somehow affect configuration).
+
+   Example of Nginx section for FPX::
+
+     location /fpx/ {
+        proxy_pass http://127.0.0.1:12321/;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header Host $host;
+        proxy_http_version 1.1;
+        proxy_request_buffering off;
+        proxy_buffering off;
+        proxy_set_header connection "upgrade";
+        proxy_set_header upgrade $http_upgrade;
+        # In emergency comment out line to force caching
+        # proxy_ignore_headers X-Accel-Expires Expires Cache-Control;
+     }

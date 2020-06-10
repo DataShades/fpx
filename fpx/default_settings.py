@@ -49,7 +49,7 @@ LOGGING = {
         },
         "fpx": {
             "handlers": ["console"],
-            "level": logging.DEBUG,
+            "level": logging.INFO,
             "propagate": 0,
         },
     },
