@@ -13,6 +13,7 @@ AWS EC2 Deploy
 
      # install `pyenv`
      git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+     # this require `chmod +x $HOME` if you are going to use different user for running services with installed python executable
      echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
      echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
      echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
@@ -34,16 +35,10 @@ AWS EC2 Deploy
    accessible by FPX service::
 
      echo '
-
      PORT = 12321
-
-     # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service.
-     # If you planning to use multiple instances + load balancer, consider using PostgreSQL
-     DB_URL = "sqlite:////etc/ckan/default/fpx.db"
-
-     # Maximum number of simultaneous downloads.
-     # In production, value between 10 and 100 should be used, depending on server's bandwidth.
-     # Higher value won't affect server perfomance, but will make downloads slower due to bandwidth limitations.
+     # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service. If you planning to use multiple instances + load balancer, consider using PostgreSQL
+     DB_URL = "sqlite:////var/lib/ckan/default/fpx.db"
+     # Maximum number of simultaneous downloads. In production, value between 10 and 100 should be used, depending on server's bandwidth. Higher value won't affect server perfomance, but will make downloads slower due to bandwidth limitations.
      SIMULTANEOURS_DOWNLOADS_LIMIT = 20
      ' > /etc/ckan/default/fpx.py
 
@@ -53,6 +48,12 @@ AWS EC2 Deploy
      export FPX_CONFIG=/etc/ckan/default/fpx.py
      fpx db up
      fpx client add my-first-fpx-client  # use any name, that match `[\w_-]`
+
+   Make sure, db is accessible and writable by FPX service. This
+   manual suggests using `apache` user when configuring supervisor's
+   process, so following command required::
+
+     chown apache:apache /var/lib/ckan/default/fpx.db
 
 5. Test service::
 
