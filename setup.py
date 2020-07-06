@@ -17,7 +17,7 @@ entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.0.6.post1",
+    version="0.0.6.post2",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",
@@ -38,7 +38,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     packages=find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.6",
     install_requires=install_requires,
     entry_points=entry_points,
     package_data={
