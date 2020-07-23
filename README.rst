@@ -122,3 +122,18 @@ AWS EC2 Deploy
         # In emergency comment out line to force caching
         # proxy_ignore_headers X-Accel-Expires Expires Cache-Control;
      }
+
+   Example of apache configuration::
+
+     # mod_proxy
+     # mod_proxy_http
+     # mod_proxy_wstunnel
+     # mod_rewrite
+     # ...
+     ProxyPass /fpx/ http://0.0.0.0:8000/
+     ProxyPassReverse /fpx/ http://0.0.0.0:8000/
+
+     RewriteEngine on
+     RewriteCond %{HTTP:UPGRADE} ^WebSocket$ [NC]
+     RewriteCond %{HTTP:CONNECTION} ^Upgrade$ [NC]
+     RewriteRule /fpx/(.*) ws://0.0.0.0:8000/$1 [P]

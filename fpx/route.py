@@ -2,6 +2,8 @@
 import logging
 import asyncio
 import json
+import base64
+import six
 
 from collections import deque
 from sanic import Blueprint, response, request, websocket
@@ -29,6 +31,13 @@ def generate(request: request.Request):
         if field not in request.json:
             return response.json({"error": f'missing "{field}" field'}, 409)
     items = request.json["items"]
+    try:
+        items = json.loads(base64.decodebytes(
+            six.ensure_binary(items)
+        ))
+    except ValueError:
+        return response.json({"error": "Must be a base64-decoded JSON-string"}, 409)
+
     ticket = Ticket(request.json["type"], items)
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
