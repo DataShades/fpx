@@ -59,15 +59,17 @@ async def stream_downloaded_files(items):
         for item in items:
             name = None,
             path = ''
+            headers = {}
             if isinstance(item, dict):
                 url = item['url']
                 path = item.get('path', path)
                 name = item.get('name') or os.path.basename(url)
+                headers = item.get('headers', headers)
             else:
                 url = item
                 name = os.path.basename(url)
             try:
-                async with session.get(url) as resp:
+                async with session.get(url, headers=headers) as resp:
                     yield path, name, resp.content
             except ClientError:
                 log.exception(f"Failed on {url}")
