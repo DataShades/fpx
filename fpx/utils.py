@@ -1,5 +1,5 @@
 import logging
-
+import re
 import os
 from asyncblink import signal
 from zipfile import ZipFile, ZipInfo
@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 chunk_size = 1024 * 64
 on_download_completed = signal("fpx:download-completed")
 on_download_started = signal("fpx:download-started")
-
+disposition_re = re.compile('filename="(.+)"')
 
 class Stream(RawIOBase):
     def __init__(self):
@@ -70,6 +70,11 @@ async def stream_downloaded_files(items):
                 name = os.path.basename(url)
             try:
                 async with session.get(url, headers=headers) as resp:
+                    disposition = resp.headers.get('content-disposition')
+                    if disposition and name not in item:
+                        match = disposition_re.match(disposition)
+                        if match:
+                            name = match.group(1)
                     yield path, name, resp.content
             except ClientError:
                 log.exception(f"Failed on {url}")
