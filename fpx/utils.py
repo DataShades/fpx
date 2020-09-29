@@ -7,12 +7,14 @@ import time
 from io import RawIOBase
 import aiohttp
 from aiohttp.client_exceptions import ClientError
+from asyncio.exceptions import TimeoutError
 from sanic.response import StreamingHTTPResponse
 
 from fpx.model import Ticket
 
 log = logging.getLogger(__name__)
-chunk_size = 1024 * 64
+chunk_size = 1024 * 256
+request_timeout = 24 * 60 * 60
 on_download_completed = signal("fpx:download-completed")
 on_download_started = signal("fpx:download-started")
 disposition_re = re.compile('filename="(.+)"')
@@ -47,9 +49,13 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
         async for path, name, content in stream_downloaded_files(ticket.items):
             z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
             with zf.open(z_info, mode="w") as dest:
-                async for chunk in content.iter_chunked(chunk_size):
-                    dest.write(chunk)
-                    yield stream.get()
+                try:
+                    async for chunk in content.iter_chunked(chunk_size):
+                        dest.write(chunk)
+                        yield stream.get()
+                except TimeoutError:
+                    log.exception(f'TimeoutError while writing {z_info}')
+                    pass
         zf.comment = b"Written by FPX"
     yield stream.get()
 
@@ -69,7 +75,8 @@ async def stream_downloaded_files(items):
                 url = item
                 name = os.path.basename(url)
             try:
-                async with session.get(url, headers=headers) as resp:
+                async with session.get(url, headers=headers,
+                                       timeout=aiohttp.ClientTimeout(total=request_timeout)) as resp:
                     disposition = resp.headers.get('content-disposition')
                     if disposition and name not in item:
                         match = disposition_re.match(disposition)
