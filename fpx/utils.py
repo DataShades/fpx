@@ -1,14 +1,20 @@
 import logging
 import re
 import os
-from asyncblink import signal
-from zipfile import ZipFile, ZipInfo
 import time
+
+from zipfile import ZipFile, ZipInfo
 from io import RawIOBase
+
+from six.moves.urllib.parse import unquote_plus
+
 import aiohttp
 from aiohttp.client_exceptions import ClientError
 from asyncio.exceptions import TimeoutError
+
+from asyncblink import signal
 from sanic.response import StreamingHTTPResponse
+
 
 from fpx.model import Ticket
 
@@ -74,6 +80,12 @@ async def stream_downloaded_files(items):
             else:
                 url = item
                 name = os.path.basename(url)
+            try:
+                simplified_name = os.path.basename(unquote_plus(name))
+                if simplified_name:
+                    name = simplified_name
+            except Exception:
+                log.exception('Cannot simplify name: %s', name)
             try:
                 async with session.get(url, headers=headers,
                                        timeout=aiohttp.ClientTimeout(total=request_timeout)) as resp:
