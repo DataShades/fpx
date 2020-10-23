@@ -81,7 +81,10 @@ async def stream_downloaded_files(items):
                 url = item
                 name = os.path.basename(url)
             try:
-                simplified_name = os.path.basename(unquote_plus(name))
+                simplified_name = os.path.basename(
+                    unquote_plus(unquote_plus(unquote_plus(
+                        name)))
+                )
                 if simplified_name:
                     name = simplified_name
             except Exception:
