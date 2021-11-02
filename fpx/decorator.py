@@ -9,9 +9,9 @@ def client_only(handler):
         id = request.headers.get("authorize")
         client = request.ctx.db.query(Client).get(id)
         if client is None:
-            return response.json({
-                'error': "Only clients authorized to use this endpoint"
-            }, 401)
+            return response.json(
+                {"error": "Only clients authorized to use this endpoint"}, 401
+            )
         return handler(request, *args, **kwargs)
 
     return wrapper

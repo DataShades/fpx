@@ -25,6 +25,7 @@ on_download_completed = signal("fpx:download-completed")
 on_download_started = signal("fpx:download-started")
 disposition_re = re.compile('filename="(.+)"')
 
+
 class Stream(RawIOBase):
     def __init__(self):
         self._buffer = b""
@@ -51,17 +52,26 @@ class Stream(RawIOBase):
 
 async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
     stream = Stream()
-    with ZipFile(stream, mode="w",) as zf:
+    with ZipFile(
+        stream,
+        mode="w",
+    ) as zf:
         async for path, name, content in stream_downloaded_files(ticket.items):
             z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
-            with zf.open(z_info, mode="w") as dest:
+            with zf.open(z_info, mode="w", force_zip64=True) as dest:
                 try:
+                    total = 0
                     async for chunk in content.iter_chunked(chunk_size):
                         dest.write(chunk)
+                        total += len(chunk)
+                        log.debug(
+                            "+Chunk %sKB / %sMB",
+                            total // 1024,
+                            total // 1024 // 1024,
+                        )
                         yield stream.get()
                 except TimeoutError:
-                    log.exception(f'TimeoutError while writing {z_info}')
-                    pass
+                    log.exception(f"TimeoutError while writing {z_info}")
         zf.comment = b"Written by FPX"
     yield stream.get()
 
@@ -69,30 +79,32 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
 async def stream_downloaded_files(items):
     async with aiohttp.ClientSession() as session:
         for item in items:
-            name = None,
-            path = ''
+            name = (None,)
+            path = ""
             headers = {}
             if isinstance(item, dict):
-                url = item['url']
-                path = item.get('path', path)
-                name = item.get('name') or os.path.basename(url)
-                headers = item.get('headers', headers)
+                url = item["url"]
+                path = item.get("path", path)
+                name = item.get("name") or os.path.basename(url)
+                headers = item.get("headers", headers)
             else:
                 url = item
                 name = os.path.basename(url)
             try:
                 simplified_name = os.path.basename(
-                    unquote_plus(unquote_plus(unquote_plus(
-                        name)))
+                    unquote_plus(unquote_plus(unquote_plus(name)))
                 )
                 if simplified_name:
                     name = simplified_name
             except Exception:
-                log.exception('Cannot simplify name: %s', name)
+                log.exception("Cannot simplify name: %s", name)
             try:
-                async with session.get(url, headers=headers,
-                                       timeout=aiohttp.ClientTimeout(total=request_timeout)) as resp:
-                    disposition = resp.headers.get('content-disposition')
+                async with session.get(
+                    url,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=request_timeout),
+                ) as resp:
+                    disposition = resp.headers.get("content-disposition")
                     if disposition and name not in item:
                         match = disposition_re.match(disposition)
                         if match:

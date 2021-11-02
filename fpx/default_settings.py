@@ -36,7 +36,10 @@ LOGGING = {
         },
     },
     "loggers": {
-        "root": {"handlers": ["console"], "level": logging.WARNING,},
+        "root": {
+            "handlers": ["console"],
+            "level": logging.WARNING,
+        },
         "sanic": {
             "handlers": ["console"],
             "level": logging.INFO,

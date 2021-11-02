@@ -1,4 +1,3 @@
-
 import logging
 import asyncio
 import json
@@ -12,6 +11,7 @@ from fpx.model import Client, Ticket
 from fpx import utils, decorator
 
 log = logging.getLogger(__name__)
+
 
 def add_routes(app):
     app.blueprint(ticket)
@@ -32,11 +32,11 @@ def generate(request: request.Request):
             return response.json({"error": f'missing "{field}" field'}, 409)
     items = request.json["items"]
     try:
-        items = json.loads(base64.decodebytes(
-            six.ensure_binary(items)
-        ))
+        items = json.loads(base64.decodebytes(six.ensure_binary(items)))
     except ValueError:
-        return response.json({"error": "Must be a base64-decoded JSON-string"}, 409)
+        return response.json(
+            {"error": "Must be a base64-decoded JSON-string"}, 409
+        )
 
     ticket = Ticket(request.json["type"], items)
     request.ctx.db.add(ticket)
@@ -55,9 +55,11 @@ async def download(request: request.Request, id: str):
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        return response.json({'error': 'Ticket not found'}, 404)
+        return response.json({"error": "Ticket not found"}, 404)
     if not ticket.is_available:
-        return response.json({'error': "You must wait untill download is available"}, 403)
+        return response.json(
+            {"error": "You must wait untill download is available"}, 403
+        )
 
     async def stream_fn(response):
         with utils.ActiveDownload(request.app.active_downloads, id):
@@ -67,8 +69,11 @@ async def download(request: request.Request, id: str):
                 await response.write(chunk)
 
     return response.stream(
-        stream_fn, content_type="application/zip",
-        headers={'content-disposition': 'attachment; filename="collection.zip"'}
+        stream_fn,
+        content_type="application/zip",
+        headers={
+            "content-disposition": 'attachment; filename="collection.zip"'
+        },
     )
 
 
@@ -81,12 +86,13 @@ async def wait(
     active = request.app.active_downloads
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        return response.json({'error': 'Ticket not found'}, 404)
+        return response.json({"error": "Ticket not found"}, 404)
 
     def _position():
         offset = q.index(id) if id in q else len(q)
         return (
-            offset + len(active)
+            offset
+            + len(active)
             - request.app.config.SIMULTANEOURS_DOWNLOADS_LIMIT
         )
 
