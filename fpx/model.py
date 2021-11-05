@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 from sanic import Sanic
-from sqlalchemy import Column, String, create_engine, Text, Boolean, DateTime
+from sqlalchemy import Column, String, create_engine, Text, Boolean, DateTime, JSON
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -29,12 +29,9 @@ class Ticket(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     type = Column(String, nullable=False)
     content = Column(Text, nullable=False)
+    options = Column(JSON, nullable=False, default=dict)
     is_available = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow())
-
-    def __init__(self, type, items):
-        self.type = type
-        self.items = items
 
     @property
     def items(self):

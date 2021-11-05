@@ -4,10 +4,9 @@ import json
 import base64
 import six
 
-from collections import deque
 from sanic import Blueprint, response, request, websocket
 
-from fpx.model import Client, Ticket
+from fpx.model import Ticket
 from fpx import utils, decorator
 
 log = logging.getLogger(__name__)
@@ -38,7 +37,12 @@ def generate(request: request.Request):
             {"error": "Must be a base64-decoded JSON-string"}, 409
         )
 
-    ticket = Ticket(request.json["type"], items)
+    try:
+        options = json.loads(base64.decodebytes(bytes(request.json.get("options"), "utf8")))
+    except (ValueError, TypeError):
+        options = {}
+
+    ticket = Ticket(type=request.json["type"], items=items, options=options)
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
     return response.json(
@@ -68,11 +72,12 @@ async def download(request: request.Request, id: str):
             async for chunk in utils.stream_ticket(ticket):
                 await response.write(chunk)
 
+    filename = ticket.options.get("filename", "collection.zip")
     return response.stream(
         stream_fn,
         content_type="application/zip",
         headers={
-            "content-disposition": 'attachment; filename="collection.zip"'
+            "content-disposition": f'attachment; filename="{filename}"'
         },
     )
 
