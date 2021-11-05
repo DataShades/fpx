@@ -17,7 +17,7 @@ entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.3.0",
+    version="0.3.3",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",
@@ -40,7 +40,7 @@ setup(
 
     ],
     packages=find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     install_requires=install_requires,
     entry_points=entry_points,
     package_data={"": ["alembic.ini", "migrations/**/*"]},
