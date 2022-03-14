@@ -10,14 +10,14 @@ install_requires = [
     "sanic~=20.3",
     "sanic-cors~=0.10.0",
     "aiohttp[speedups]~=3.8",
-    "click",
+    "click~=7.0",
     "six>=1.13",
 ]
 entry_points = {"console_scripts": ["fpx = fpx.cli:fpx"]}
 
 setup(
     name="fpx",
-    version="0.3.3",
+    version="0.3.4",
     description="""""",
     long_description=long_description,
     author="Sergey Motornyuk",

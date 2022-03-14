@@ -38,6 +38,11 @@ AWS EC2 Deploy
      PORT = 12321
      # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service. If you planning to use multiple instances + load balancer, consider using PostgreSQL
      DB_URL = "sqlite:////var/lib/ckan/default/fpx.db"
+     # Any other options passed directly to the SQLAlchemy engine constructor(https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine)
+     DB_EXTRAS = {
+         # "pool_size": 10,
+         # "max_overflow": 20,
+     }
      # Maximum number of simultaneous downloads. In production, value between 10 and 100 should be used, depending on server's bandwidth. Higher value won't affect server perfomance, but will make downloads slower due to bandwidth limitations.
      SIMULTANEOURS_DOWNLOADS_LIMIT = 20
      ' > /etc/ckan/default/fpx.py

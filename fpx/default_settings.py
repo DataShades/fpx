@@ -8,6 +8,9 @@ PORT = 8000
 KEEP_ALIVE = False
 
 DB_URL = "sqlite:////tmp/fpx.db"
+DB_EXTRAS = {
+    # "echo": True,
+}
 SIMULTANEOURS_DOWNLOADS_LIMIT = 2
 
 LOGGING = {
