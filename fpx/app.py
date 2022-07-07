@@ -9,9 +9,10 @@ from . import default_settings
 
 
 def make_app():
-    app = Sanic(__name__, load_env="FPX_", register=False)
-    app.config.from_object(default_settings)
-    app.config.from_envvar("FPX_CONFIG")
+    app = Sanic(__name__, register=False)
+    app.config.update_config(default_settings)
+    app.config.load_environment_vars(prefix="FPX_", )
+    app.config.update_config("${FPX_CONFIG}")
     CORS(app)
     configure_app(app)
     add_middlewares(app)

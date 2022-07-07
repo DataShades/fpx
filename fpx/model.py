@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import secrets
+from typing import Any
 import uuid
 import json
 from datetime import datetime
@@ -34,12 +37,12 @@ class Client(Base):
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    type = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    options = Column(JSON, nullable=False, default=dict)
-    is_available = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow())
+    id: str = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    type: str = Column(String, nullable=False)
+    content: str = Column(Text, nullable=False)
+    options: dict[str, Any] = Column(JSON, nullable=False, default=dict)
+    is_available: bool = Column(Boolean, default=False)
+    created_at: datetime = Column(DateTime, default=datetime.utcnow())
 
     @property
     def items(self):

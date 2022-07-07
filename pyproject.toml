@@ -1,6 +1,12 @@
 [tool.black]
 line-length = 79
 preview = true
+
+[tool.mypy]
+plugins = "sqlmypy"
+files = "ckan"
+exclude = "ckan/(pastertemplates|tests|migration)"
+
 [tool.towncrier]
 filename = "CHANGELOG.rst"
 directory = "changes"

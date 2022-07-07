@@ -15,15 +15,21 @@ def db():
 @db.command()
 @click.pass_obj
 def up(app):
-    command.upgrade(_alembic_config(app.config), "head")
+    _up(app)
     click.secho("Success", fg="green")
+
+def _up(app):
+    command.upgrade(_alembic_config(app.config), "head")
 
 
 @db.command()
 @click.pass_obj
 def down(app):
-    command.downgrade(_alembic_config(app.config), "base")
+    _down(app)
     click.secho("Success", fg="green")
+
+def _down(app):
+    command.downgrade(_alembic_config(app.config), "base")
 
 
 @db.command()
