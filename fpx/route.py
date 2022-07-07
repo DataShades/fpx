@@ -38,7 +38,9 @@ def generate(request: request.Request):
         )
 
     try:
-        options = json.loads(base64.decodebytes(bytes(request.json.get("options"), "utf8")))
+        options = json.loads(
+            base64.decodebytes(bytes(request.json.get("options"), "utf8"))
+        )
     except (ValueError, TypeError):
         options = {}
 
@@ -77,9 +79,7 @@ async def download(request: request.Request, id: str):
     return response.stream(
         stream_fn,
         content_type="application/zip",
-        headers={
-            "content-disposition": f'attachment; filename="{filename}"'
-        },
+        headers={"content-disposition": f'attachment; filename="{filename}"'},
     )
 
 

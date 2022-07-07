@@ -4,7 +4,15 @@ import json
 from datetime import datetime
 
 from sanic import Sanic
-from sqlalchemy import Column, String, create_engine, Text, Boolean, DateTime, JSON
+from sqlalchemy import (
+    Column,
+    String,
+    create_engine,
+    Text,
+    Boolean,
+    DateTime,
+    JSON,
+)
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
