@@ -2,9 +2,11 @@ import logging
 import asyncio
 import json
 import base64
-import six
+from typing import Union
 
-from sanic import Blueprint, response, request, websocket
+from sanic import Blueprint, response, request
+from sanic.server.websockets.impl import WebsocketImplProtocol
+from sanic.exceptions import WebsocketClosed
 
 from fpx.model import Ticket
 from fpx import utils, decorator
@@ -19,6 +21,15 @@ def add_routes(app):
 ticket = Blueprint("ticket", url_prefix="/ticket")
 
 
+@ticket.route("/")
+async def index(request: request.Request):
+    return response.text("Hello, world.")
+    q = request.ctx.db.query(Ticket)
+    return response.json({"count": q.count(), "tickets": [
+        {"created": t.created_at.isoformat(), "type": t.type}
+        for t in q
+    ]})
+
 @ticket.route("/generate", methods=["POST"])
 @decorator.client_only
 def generate(request: request.Request):
@@ -29,9 +40,11 @@ def generate(request: request.Request):
     for field in required_fields:
         if field not in request.json:
             return response.json({"error": f'missing "{field}" field'}, 409)
-    items = request.json["items"]
+    items: Union[str, bytes] = request.json["items"]
     try:
-        items = json.loads(base64.decodebytes(six.ensure_binary(items)))
+        if isinstance(items, str):
+            items = items.encode("utf8")
+        items = json.loads(base64.decodebytes(items))
     except ValueError:
         return response.json(
             {"error": "Must be a base64-decoded JSON-string"}, 409
@@ -69,27 +82,27 @@ async def download(request: request.Request, id: str):
         )
 
     async def stream_fn(response):
-        with utils.ActiveDownload(request.app.active_downloads, id):
+        with utils.ActiveDownload(request.app.ctx.active_downloads, id):
             db.delete(ticket)
             db.commit()
             async for chunk in utils.stream_ticket(ticket):
                 await response.write(chunk)
 
     filename = ticket.options.get("filename", "collection.zip")
-    return response.stream(
+    return response.ResponseStream(
         stream_fn,
-        content_type="application/zip",
         headers={"content-disposition": f'attachment; filename="{filename}"'},
+        content_type="application/zip",
     )
 
 
 @ticket.websocket("/<id>/wait")
 async def wait(
-    request: request.Request, ws: websocket.WebSocketCommonProtocol, id: str
+    request: request.Request, ws: WebsocketImplProtocol, id: str
 ):
     db = request.ctx.db
-    q = request.app.download_queue
-    active = request.app.active_downloads
+    q = request.app.ctx.download_queue
+    active = request.app.ctx.active_downloads
     ticket = db.query(Ticket).get(id)
     if ticket is None:
         return response.json({"error": "Ticket not found"}, 404)
@@ -141,8 +154,8 @@ async def wait(
     log.debug(f"Appended {id} to download queue: {q}")
 
     try:
-        await ws.wait_closed()
-    except (websocket.ConnectionClosed, asyncio.CancelledError):
+        await ws.wait_for_connection_lost(timeout=3600)
+    except (WebsocketClosed, asyncio.CancelledError):
         q.remove(id)
         log.debug(f"Removed {id} from download queue: {q}")
         raise

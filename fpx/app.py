@@ -1,29 +1,23 @@
 from sanic import Sanic
-from sanic_cors import CORS
-
 
 from .route import add_routes
 from .config import configure_app
 from .middleware import add_middlewares
-from . import default_settings
-
 
 def make_app():
-    app = Sanic(__name__, register=False)
-    app.config.update_config(default_settings)
-    app.config.load_environment_vars(prefix="FPX_", )
-    app.config.update_config("${FPX_CONFIG}")
-    CORS(app)
+    app = Sanic("FPX")
+
     configure_app(app)
     add_middlewares(app)
     add_routes(app)
+
     return app
 
 
-def run_app():
-    app = make_app()
+def run_app(app: Sanic):
     app.run(
         host=app.config.HOST,
         port=app.config.PORT,
         debug=app.config.DEBUG,
+        auto_reload=app.config.DEBUG
     )

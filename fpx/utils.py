@@ -6,14 +6,14 @@ import time
 from zipfile import ZipFile, ZipInfo
 from io import RawIOBase
 
-from six.moves.urllib.parse import unquote_plus
+from urllib.parse import unquote_plus
 
 import aiohttp
 from aiohttp.client_exceptions import ClientError
 from asyncio.exceptions import TimeoutError
 
 from asyncblink import signal
-from sanic.response import StreamingHTTPResponse
+
 
 
 from fpx.model import Ticket

@@ -3,7 +3,7 @@ from collections import deque
 
 
 def db_session(request):
-    request.ctx.db = request.app.DbSession()
+    request.ctx.db = request.app.ctx.DbSession()
 
 
 def db_session_close(request, response):
@@ -15,8 +15,8 @@ def db_session_close(request, response):
 
 
 def create_download_queue(app, loop):
-    app.download_queue = deque()
-    app.active_downloads = list()
+    app.ctx.download_queue = deque()
+    app.ctx.active_downloads = list()
 
 
 def add_middlewares(app: Sanic):

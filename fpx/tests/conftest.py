@@ -25,4 +25,4 @@ def app(monkeypatch, tmpdir):
 
 @pytest.fixture
 def db(app):
-    return app.DbSession()
+    return app.ctx.DbSession()

@@ -6,6 +6,7 @@ HOST = "0.0.0.0"
 PORT = 8000
 
 KEEP_ALIVE = False
+CORS_ORIGINS = "*"
 
 DB_URL = "sqlite:////tmp/fpx.db"
 DB_EXTRAS = {

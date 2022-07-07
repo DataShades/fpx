@@ -59,4 +59,4 @@ class Ticket(Base):
 def make_db_session(app: Sanic):
     engine = create_engine(app.config.DB_URL, **app.config.DB_EXTRAS)
     Session.configure(bind=engine)
-    app.DbSession = Session
+    app.ctx.DbSession = Session
