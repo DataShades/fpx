@@ -15,11 +15,14 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     JSON,
+    orm,
 )
-from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy.ext.declarative import declarative_base
 
-Session = sessionmaker()
+Session = orm.sessionmaker()
+scoped_session = orm.scoped_session(Session)
+
 Base = declarative_base()
 
 

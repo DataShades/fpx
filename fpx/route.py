@@ -23,7 +23,6 @@ ticket = Blueprint("ticket", url_prefix="/ticket")
 
 @ticket.route("/")
 async def index(request: request.Request):
-    return response.text("Hello, world.")
     q = request.ctx.db.query(Ticket)
     return response.json({"count": q.count(), "tickets": [
         {"created": t.created_at.isoformat(), "type": t.type}

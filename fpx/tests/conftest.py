@@ -1,17 +1,12 @@
 import pytest
-from shutil import rmtree
 from fpx.app import make_app
 from fpx.cli.db import _up
-
+import factory
+from pytest_factoryboy import register
+from sanic_testing import TestManager
 from . import settings
+from .. import model as m
 
-from sqlalchemy import create_engine
-from sqlalchemy.pool import StaticPool
-
-def _engine():
-    return create_engine('sqlite://',
-              connect_args={'check_same_thread':False},
-              poolclass=StaticPool)
 
 @pytest.fixture
 def app(monkeypatch, tmpdir):
@@ -19,10 +14,24 @@ def app(monkeypatch, tmpdir):
     db_path = f"sqlite:///{tmpdir}/fpx.db"
     monkeypatch.setenv('FPX_DB_URL', db_path)
     application = make_app()
-    application.DbSession.bind = _engine()
+
+    TestManager(application)
+
     _up(application)
     yield application
+
 
 @pytest.fixture
 def db(app):
     return app.ctx.DbSession()
+
+
+@register
+class TicketFactory(factory.alchemy.SQLAlchemyModelFactory):
+    class Meta:
+        model = m.Ticket
+        sqlalchemy_session = m.scoped_session
+        sqlalchemy_session_persistence = "commit"
+
+    type = "url"
+    content = factory.Dict()
