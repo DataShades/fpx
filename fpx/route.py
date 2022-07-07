@@ -43,6 +43,7 @@ def generate(request: request.Request):
         options = {}
 
     ticket = Ticket(type=request.json["type"], items=items, options=options)
+
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
     return response.json(

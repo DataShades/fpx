@@ -9,7 +9,7 @@ from . import default_settings
 
 
 def make_app():
-    app = Sanic(__name__, load_env="FPX_")
+    app = Sanic(__name__, load_env="FPX_", register=False)
     app.config.from_object(default_settings)
     app.config.from_envvar("FPX_CONFIG")
     CORS(app)
