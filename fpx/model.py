@@ -6,11 +6,9 @@ import uuid
 import json
 from datetime import datetime
 
-from sanic import Sanic
 from sqlalchemy import (
     Column,
     String,
-    create_engine,
     Text,
     Boolean,
     DateTime,
@@ -20,8 +18,9 @@ from sqlalchemy import (
 
 from sqlalchemy.ext.declarative import declarative_base
 
-Session = orm.sessionmaker()
-scoped_session = orm.scoped_session(Session)
+Session = orm.scoped_session(
+    orm.sessionmaker(autocommit=False, autoflush=False)
+)
 
 Base = declarative_base()
 
@@ -57,9 +56,3 @@ class Ticket(Base):
     @items.setter
     def items(self, value):
         self.content = json.dumps(value)
-
-
-def make_db_session(app: Sanic):
-    engine = create_engine(app.config.DB_URL, **app.config.DB_EXTRAS)
-    Session.configure(bind=engine)
-    app.ctx.DbSession = Session

@@ -1,13 +1,34 @@
-from sanic import Sanic
-from logging.config import dictConfig
-from fpx.model import make_db_session
-from . import default_settings
+from __future__ import annotations
+from typing import Any
 
-def configure_app(app: Sanic):
-    app.config.update_config(default_settings)
-    app.config.load_environment_vars(prefix="FPX_", )
-    app.config.update_config("${FPX_CONFIG}")
+from sanic.config import Config
 
-    dictConfig(app.config.LOGGING)
-    make_db_session(app)
-    return app
+from sqlalchemy import create_engine
+from . import model
+
+def _defaults() -> dict[str, Any]:
+    return dict(
+        DEBUG = False,
+        HOST = "0.0.0.0",
+        PORT = 8000,
+        KEEP_ALIVE = False,
+        CORS_ORIGINS = "*",
+        DB_URL = "sqlite:////tmp/fpx.db",
+        DB_EXTRAS = {
+            # "echo": True,
+        },
+        SIMULTANEOURS_DOWNLOADS_LIMIT = 2,
+        FALLBACK_ERROR_FORMAT="json",
+    )
+
+class FpxConfig(Config):
+
+    def __init__(self):
+        super().__init__()
+        self.update_config(_defaults())
+        self.load_environment_vars(prefix="FPX_")
+        self.update_config("${FPX_CONFIG}")
+
+        engine = create_engine(self.DB_URL, **self.DB_EXTRAS)
+        model.Session.remove()
+        model.Session.configure(bind=engine)

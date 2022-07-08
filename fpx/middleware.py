@@ -1,9 +1,7 @@
 from sanic import Sanic
-from collections import deque
-
 
 def db_session(request):
-    request.ctx.db = request.app.ctx.DbSession()
+    request.ctx.db = request.app.ctx.db_session()
 
 
 def db_session_close(request, response):
@@ -13,14 +11,6 @@ def db_session_close(request, response):
         # DB session is not set. Probably it's non-existing route
         pass
 
-
-def create_download_queue(app, loop):
-    app.ctx.download_queue = deque()
-    app.ctx.active_downloads = list()
-
-
 def add_middlewares(app: Sanic):
     app.middleware(db_session)
     app.middleware("response")(db_session_close)
-
-    app.listener("after_server_start")(create_download_queue)

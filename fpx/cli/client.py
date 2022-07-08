@@ -12,7 +12,7 @@ def client():
 @click.pass_obj
 @click.argument("name")
 def add(app: Sanic, name: str):
-    sess = app.ctx.DbSession()
+    sess = app.ctx.db_session()
     client = Client(name)
     sess.add(client)
     sess.commit()
@@ -23,7 +23,7 @@ def add(app: Sanic, name: str):
 @click.pass_obj
 @click.argument("name")
 def drop(app: Sanic, name: str):
-    sess = app.ctx.DbSession()
+    sess = app.ctx.db_session()
     sess.query(Client).filter_by(name=name).delete()
     sess.commit()
     click.secho(f"Client removed", fg="green")
@@ -33,7 +33,7 @@ def drop(app: Sanic, name: str):
 @click.pass_obj
 @click.argument("name")
 def regenerate(app: Sanic, name: str):
-    sess = app.ctx.DbSession()
+    sess = app.ctx.db_session()
     client = sess.query(Client).filter_by(name=name).first()
     sess.delete(client)
     sess.commit()
@@ -49,7 +49,7 @@ def regenerate(app: Sanic, name: str):
 @client.command()
 @click.pass_obj
 def list(app: Sanic):
-    sess = app.ctx.DbSession()
+    sess = app.ctx.db_session()
     click.echo("Clients:")
     for client in sess.query(Client):
         click.echo(f"\t{client}")

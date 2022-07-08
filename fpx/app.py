@@ -1,13 +1,22 @@
-from sanic import Sanic
-
+from sanic import Sanic, response
+from sanic.handlers import ErrorHandler
+from webargs_sanic.sanicparser import HandleValidationError
 from .route import add_routes
-from .config import configure_app
+from .config import FpxConfig
 from .middleware import add_middlewares
+from .context import Context
+
+class FpxErrorHandler(ErrorHandler):
+    def default(self, request, exception):
+        if isinstance(exception, HandleValidationError):
+            return response.json(exception.data["message"], exception.status_code)
+        return super().default(request, exception)
+
+
 
 def make_app():
-    app = Sanic("FPX")
+    app = Sanic("FPX", ctx=Context(), config=FpxConfig(), error_handler=FpxErrorHandler())
 
-    configure_app(app)
     add_middlewares(app)
     add_routes(app)
 

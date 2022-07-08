@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import logging
 import asyncio
 import json
 import base64
-from typing import Union
+from typing import Any, Union
 
 from sanic import Blueprint, response, request
 from sanic.server.websockets.impl import WebsocketImplProtocol
@@ -10,6 +12,10 @@ from sanic.exceptions import WebsocketClosed
 
 from fpx.model import Ticket
 from fpx import utils, decorator
+
+from webargs import fields, validate
+from webargs_sanic.sanicparser import use_args
+
 
 log = logging.getLogger(__name__)
 
@@ -22,16 +28,19 @@ ticket = Blueprint("ticket", url_prefix="/ticket")
 
 
 @ticket.route("/")
-async def index(request: request.Request):
-    q = request.ctx.db.query(Ticket)
-    return response.json({"count": q.count(), "tickets": [
+@use_args({"page": fields.Int(load_default=1, validate=validate.Range(1))}, location="query")
+async def index(request: request.Request, args: dict[str, Any]) -> response.HTTPResponse:
+    limit = 10
+    base = request.ctx.db.query(Ticket)
+    q = base.limit(limit).offset(limit * args["page"] - limit)
+    return response.json({"count": base.count(), "tickets": [
         {"created": t.created_at.isoformat(), "type": t.type}
         for t in q
     ]})
 
 @ticket.route("/generate", methods=["POST"])
 @decorator.client_only
-def generate(request: request.Request):
+async def generate(request: request.Request) -> response.HTTPResponse:
     required_fields = ["type", "items"]
     if not request.json:
         return response.json({"error": f"requires json payload"}, 409)
@@ -70,7 +79,7 @@ def generate(request: request.Request):
 
 
 @ticket.route("/<id>/download")
-async def download(request: request.Request, id: str):
+async def download(request: request.Request, id: str) -> response.HTTPResponse:
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
     if ticket is None:
