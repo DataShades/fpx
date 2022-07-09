@@ -15,7 +15,6 @@ from asyncio.exceptions import TimeoutError
 from asyncblink import signal
 
 
-
 from fpx.model import Ticket
 
 log = logging.getLogger(__name__)
@@ -89,7 +88,7 @@ async def stream_downloaded_files(items):
                 headers = item.get("headers", headers)
             else:
                 url = item
-                name = os.path.basename(url)
+                name = os.path.basename(url.rstrip("/"))
             try:
                 simplified_name = os.path.basename(
                     unquote_plus(unquote_plus(unquote_plus(name)))

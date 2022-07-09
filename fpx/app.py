@@ -25,5 +25,5 @@ def run_app(app: Sanic):
         host=app.config.HOST,
         port=app.config.PORT,
         debug=app.config.DEBUG,
-        auto_reload=app.config.DEBUG
+        auto_reload=app.config.DEBUG,
     )

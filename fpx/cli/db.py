@@ -18,6 +18,7 @@ def up(app):
     _up(app)
     click.secho("Success", fg="green")
 
+
 def _up(app):
     command.upgrade(_alembic_config(app.config), "head")
 
@@ -27,6 +28,7 @@ def _up(app):
 def down(app):
     _down(app)
     click.secho("Success", fg="green")
+
 
 def _down(app):
     command.downgrade(_alembic_config(app.config), "base")

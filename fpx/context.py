@@ -5,9 +5,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm.scoping import ScopedSession
 from .model import Session
 
-__all__ = [
-    "Context"
-]
+__all__ = ["Context"]
 
 
 @dataclass

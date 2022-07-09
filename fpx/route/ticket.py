@@ -3,8 +3,7 @@ from __future__ import annotations
 import logging
 import asyncio
 import json
-import base64
-from typing import Any, Union
+from typing import Any
 
 from sqlalchemy.orm.query import Query
 from sanic import Blueprint, response, request
@@ -14,67 +13,39 @@ from sanic.exceptions import WebsocketClosed
 from fpx.model import Ticket
 from fpx import utils
 
-from webargs_sanic.sanicparser import use_args, use_kwargs
-from . import schema
+from webargs_sanic.sanicparser import use_kwargs
+from .. import schema
 
 log = logging.getLogger(__name__)
-
-
-def add_routes(app):
-    app.blueprint(ticket)
-
 
 ticket = Blueprint("ticket", url_prefix="/ticket")
 
 
 @ticket.get("/")
-@use_kwargs(schema.Index(), location="query")
+@use_kwargs(schema.TicketIndex(), location="query")
 async def index(request: request.Request, page: int) -> response.HTTPResponse:
     limit = 10
     base = request.ctx.db.query(Ticket)
     q: Query[Ticket] = base.limit(limit).offset(limit * page - limit)
-    return response.json({"page": page, "count": base.count(), "tickets": [
-        t.for_json()
-        for t in q
-    ]})
+    return response.json(
+        {
+            "page": page,
+            "count": base.count(),
+            "tickets": [t.for_json() for t in q],
+        }
+    )
+
 
 @ticket.route("/generate", methods=["POST"], ctx_requires_client=True)
-async def generate(request: request.Request) -> response.HTTPResponse:
-    required_fields = ["type", "items"]
-    if not request.json:
-        return response.json({"error": f"requires json payload"}, 409)
-
-    for field in required_fields:
-        if field not in request.json:
-            return response.json({"error": f'missing "{field}" field'}, 409)
-    items: Union[str, bytes] = request.json["items"]
-    try:
-        if isinstance(items, str):
-            items = items.encode("utf8")
-        items = json.loads(base64.decodebytes(items))
-    except ValueError:
-        return response.json(
-            {"error": "Must be a base64-decoded JSON-string"}, 409
-        )
-
-    try:
-        options = json.loads(
-            base64.decodebytes(bytes(request.json.get("options"), "utf8"))
-        )
-    except (ValueError, TypeError):
-        options = {}
-
-    ticket = Ticket(type=request.json["type"], items=items, options=options)
-
+@use_kwargs(schema.TicketGenerate(), location="json")
+async def generate(
+    request: request.Request, type: str, items: Any, options: dict[str, Any]
+) -> response.HTTPResponse:
+    ticket = Ticket(type=type, items=items, options=options)
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
-    return response.json(
-        dict(
-            id=ticket.id,
-            items=ticket.items,
-            type=ticket.type,
-        )
-    )
+
+    return response.json(ticket.for_json(include_id=True))
 
 
 @ticket.route("/<id>/download")
@@ -82,10 +53,16 @@ async def download(request: request.Request, id: str) -> response.HTTPResponse:
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        return response.json({"error": "Ticket not found"}, 404)
+        return response.json({"errors": {"id": "Ticket not found"}}, 404)
+
     if not ticket.is_available:
         return response.json(
-            {"error": "You must wait untill download is available"}, 403
+            {
+                "errors": {
+                    "access": "You must wait untill download is available"
+                }
+            },
+            403,
         )
 
     async def stream_fn(response):
@@ -104,9 +81,7 @@ async def download(request: request.Request, id: str) -> response.HTTPResponse:
 
 
 @ticket.websocket("/<id>/wait")
-async def wait(
-    request: request.Request, ws: WebsocketImplProtocol, id: str
-):
+async def wait(request: request.Request, ws: WebsocketImplProtocol, id: str):
     db = request.ctx.db
     q = request.app.ctx.download_queue
     active = request.app.ctx.active_downloads

@@ -1,15 +1,21 @@
 from sanic import Sanic, response
 from fpx.model import Client
 
+
 def authentication(request):
     client = None
     id_ = request.headers.get("authorize")
     if id_:
         client = request.ctx.db.query(Client).get(id_)
 
-    if not client and  getattr(request.ctx, "requires_client", False):
+    if not client and getattr(request.route.ctx, "requires_client", False):
         return response.json(
-            {"errors": {"access": "Only clients authorized to use this endpoint"}}, 401
+            {
+                "errors": {
+                    "access": "Only clients authorized to use this endpoint"
+                }
+            },
+            401,
         )
     request.ctx.client = client
 
@@ -24,6 +30,7 @@ def db_session_close(request, response):
     except AttributeError:
         # DB session is not set. Probably it's non-existing route
         pass
+
 
 def add_middlewares(app: Sanic):
     app.on_request(db_session)

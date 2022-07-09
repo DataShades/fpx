@@ -27,8 +27,8 @@ Base = declarative_base()
 
 class Client(Base):
     __tablename__ = "clients"
-    id = Column(String, primary_key=True, default=secrets.token_urlsafe)
-    name = Column(String, unique=True, nullable=False)
+    id: str = Column(String, primary_key=True, default=secrets.token_urlsafe)
+    name: str = Column(String, unique=True, nullable=False)
 
     def __init__(self, name):
         self.name = name
@@ -36,10 +36,19 @@ class Client(Base):
     def __str__(self):
         return f"<Client {self.name}({self.id})>"
 
+    def for_json(self, include_id: bool = False) -> dict[str, Any]:
+        data = {"name": self.name}
+        if include_id:
+            data["id"] = self.id
+
+        return data
+
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    id: str = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id: str = Column(
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     type: str = Column(String, nullable=False)
     content: str = Column(Text, nullable=False)
     options: dict[str, Any] = Column(JSON, nullable=False, default=dict)
@@ -56,7 +65,6 @@ class Ticket(Base):
     @items.setter
     def items(self, value):
         self.content = json.dumps(value)
-
 
     def for_json(self, include_id: bool = False) -> dict[str, Any]:
         data = {"created": self.created_at.isoformat(), "type": self.type}

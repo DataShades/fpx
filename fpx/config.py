@@ -6,23 +6,24 @@ from sanic.config import Config
 from sqlalchemy import create_engine
 from . import model
 
+
 def _defaults() -> dict[str, Any]:
     return dict(
-        DEBUG = False,
-        HOST = "0.0.0.0",
-        PORT = 8000,
-        KEEP_ALIVE = False,
-        CORS_ORIGINS = "*",
-        DB_URL = "sqlite:////tmp/fpx.db",
-        DB_EXTRAS = {
+        DEBUG=False,
+        HOST="0.0.0.0",
+        PORT=8000,
+        KEEP_ALIVE=False,
+        CORS_ORIGINS="*",
+        DB_URL="sqlite:////tmp/fpx.db",
+        DB_EXTRAS={
             # "echo": True,
         },
-        SIMULTANEOURS_DOWNLOADS_LIMIT = 2,
+        SIMULTANEOURS_DOWNLOADS_LIMIT=2,
         FALLBACK_ERROR_FORMAT="json",
     )
 
-class FpxConfig(Config):
 
+class FpxConfig(Config):
     def __init__(self):
         super().__init__()
         self.update_config(_defaults())
