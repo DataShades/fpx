@@ -6,11 +6,11 @@ class TestIndex:
     def test_empty(self, reusable_client):
         _, resp = reusable_client.get("/ticket")
         assert resp.status == 200
-        assert resp.json == {"count": 0, "tickets": []}
+        assert resp.json == {"page": 1, "count": 0, "tickets": []}
 
     def test_non_empty(self, reusable_client, ticket: m.Ticket):
         _, resp = reusable_client.get("/ticket")
-        assert resp.json == {"count": 1, "tickets": [{
+        assert resp.json == {"page": 1, "count": 1, "tickets": [{
             "created": ticket.created_at.isoformat(),
             "type": ticket.type
         }]}

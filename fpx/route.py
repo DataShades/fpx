@@ -6,16 +6,16 @@ import json
 import base64
 from typing import Any, Union
 
+from sqlalchemy.orm.query import Query
 from sanic import Blueprint, response, request
 from sanic.server.websockets.impl import WebsocketImplProtocol
 from sanic.exceptions import WebsocketClosed
 
 from fpx.model import Ticket
-from fpx import utils, decorator
+from fpx import utils
 
-from webargs import fields, validate
-from webargs_sanic.sanicparser import use_args
-
+from webargs_sanic.sanicparser import use_args, use_kwargs
+from . import schema
 
 log = logging.getLogger(__name__)
 
@@ -27,19 +27,18 @@ def add_routes(app):
 ticket = Blueprint("ticket", url_prefix="/ticket")
 
 
-@ticket.route("/")
-@use_args({"page": fields.Int(load_default=1, validate=validate.Range(1))}, location="query")
-async def index(request: request.Request, args: dict[str, Any]) -> response.HTTPResponse:
+@ticket.get("/")
+@use_kwargs(schema.Index(), location="query")
+async def index(request: request.Request, page: int) -> response.HTTPResponse:
     limit = 10
     base = request.ctx.db.query(Ticket)
-    q = base.limit(limit).offset(limit * args["page"] - limit)
-    return response.json({"count": base.count(), "tickets": [
-        {"created": t.created_at.isoformat(), "type": t.type}
+    q: Query[Ticket] = base.limit(limit).offset(limit * page - limit)
+    return response.json({"page": page, "count": base.count(), "tickets": [
+        t.for_json()
         for t in q
     ]})
 
-@ticket.route("/generate", methods=["POST"])
-@decorator.client_only
+@ticket.route("/generate", methods=["POST"], ctx_requires_client=True)
 async def generate(request: request.Request) -> response.HTTPResponse:
     required_fields = ["type", "items"]
     if not request.json:

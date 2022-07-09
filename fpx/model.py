@@ -56,3 +56,11 @@ class Ticket(Base):
     @items.setter
     def items(self, value):
         self.content = json.dumps(value)
+
+
+    def for_json(self, include_id: bool = False) -> dict[str, Any]:
+        data = {"created": self.created_at.isoformat(), "type": self.type}
+        if include_id:
+            data["id"] = self.id
+
+        return data
