@@ -1,7 +1,8 @@
 import click
 
-from . import server, db, client, ticket
 from fpx.app import make_app
+
+from . import client, db, server, ticket
 
 
 @click.group(no_args_is_help=True)

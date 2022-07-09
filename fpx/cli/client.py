@@ -1,5 +1,6 @@
 import click
 from sanic import Sanic
+
 from fpx.model import Client
 
 

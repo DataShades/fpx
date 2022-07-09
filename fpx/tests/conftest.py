@@ -1,14 +1,16 @@
-import pytest
-from fpx.app import make_app
-from fpx.cli.db import _up
 import factory
+import pytest
+from aioresponses import aioresponses
 from pytest_factoryboy import register
 
 # from sanic_testing import TestManager
 from sanic_testing.reusable import ReusableClient
-from aioresponses import aioresponses
-from . import settings
+
+from fpx.app import make_app
+from fpx.cli.db import _up
+
 from .. import model as m
+from . import settings
 
 
 @pytest.fixture

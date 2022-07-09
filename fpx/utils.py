@@ -1,19 +1,15 @@
 import logging
-import re
 import os
+import re
 import time
-
-from zipfile import ZipFile, ZipInfo
+from asyncio.exceptions import TimeoutError
 from io import RawIOBase
-
 from urllib.parse import unquote_plus
+from zipfile import ZipFile, ZipInfo
 
 import aiohttp
 from aiohttp.client_exceptions import ClientError
-from asyncio.exceptions import TimeoutError
-
 from asyncblink import signal
-
 
 from fpx.model import Ticket
 

@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 from typing import Any
 
 from sanic.config import Config
-
 from sqlalchemy import create_engine
+
 from . import model
 
 

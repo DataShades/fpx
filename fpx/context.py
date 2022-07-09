@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+
 from sqlalchemy.orm.scoping import ScopedSession
+
 from .model import Session
 
 __all__ = ["Context"]

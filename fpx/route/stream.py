@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-import logging
 import asyncio
 import json
+import logging
 from typing import Any
 
-from sqlalchemy.orm.query import Query
-from sanic import Blueprint, response, request
-from sanic.server.websockets.impl import WebsocketImplProtocol
+from sanic import Blueprint, request, response
 from sanic.exceptions import WebsocketClosed
-
-from fpx.model import Ticket
-from fpx import utils
-
+from sanic.server.websockets.impl import WebsocketImplProtocol
+from sqlalchemy.orm.query import Query
 from webargs_sanic.sanicparser import use_kwargs
-from .. import schema
 
+from fpx import utils
+from fpx.model import Ticket
+
+from .. import schema
 
 stream = Blueprint("stream", url_prefix="/stream")
 

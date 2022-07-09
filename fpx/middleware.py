@@ -1,4 +1,5 @@
 from sanic import Sanic, response
+
 from fpx.model import Client
 
 

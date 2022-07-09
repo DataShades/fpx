@@ -1,8 +1,8 @@
 import os
-import click
 
-from alembic.config import Config
+import click
 from alembic import command
+from alembic.config import Config
 
 import fpx
 

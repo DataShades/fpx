@@ -1,21 +1,12 @@
 from __future__ import annotations
 
-import secrets
-from typing import Any
-import uuid
 import json
+import secrets
+import uuid
 from datetime import datetime
+from typing import Any
 
-from sqlalchemy import (
-    Column,
-    String,
-    Text,
-    Boolean,
-    DateTime,
-    JSON,
-    orm,
-)
-
+from sqlalchemy import JSON, Boolean, Column, DateTime, String, Text, orm
 from sqlalchemy.ext.declarative import declarative_base
 
 Session = orm.scoped_session(

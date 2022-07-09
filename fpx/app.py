@@ -1,9 +1,10 @@
 from sanic import Sanic, response
 from webargs_sanic.sanicparser import HandleValidationError
-from .route import add_routes
+
 from .config import FpxConfig
-from .middleware import add_middlewares
 from .context import Context
+from .middleware import add_middlewares
+from .route import add_routes
 
 
 async def handle_validation_error(request, err):

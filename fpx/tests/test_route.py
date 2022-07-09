@@ -1,9 +1,10 @@
+import base64
 import json
 import os
-import base64
 from io import BytesIO
-import pytest
 from zipfile import ZipFile
+
+import pytest
 
 from fpx import model as m
 
