@@ -27,7 +27,7 @@ Standalone service for collecting content from multiple source into single file.
     python -m venv fpx
     cd fpx
     source bin/activate
-    pip install fpx
+    pip install 'fpx~=0.4.0'
     ```
 
 1. Create config file. It can be created anywhere, as long as it accessible by FPX service:
