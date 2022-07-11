@@ -25,8 +25,8 @@ ticket = Blueprint("ticket", url_prefix="/ticket")
 @use_kwargs(schema.TicketIndex(), location="query")
 async def index(request: request.Request, page: int) -> response.HTTPResponse:
     limit = 10
-    base = request.ctx.db.query(Ticket)
-    q: Query[Ticket] = base.limit(limit).offset(limit * page - limit)
+    base: Query[Ticket] = request.ctx.db.query(Ticket)
+    q = base.limit(limit).offset(limit * page - limit)
     return response.json(
         {
             "page": page,
@@ -52,6 +52,7 @@ async def generate(
 async def download(request: request.Request, id: str) -> response.HTTPResponse:
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
+
     if ticket is None:
         return response.json({"errors": {"id": "Ticket not found"}}, 404)
 
