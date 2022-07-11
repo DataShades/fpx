@@ -29,15 +29,21 @@ async def url(request: request.Request, url, client):
         raise exception.NotFound({"client": "Client not found"})
 
     try:
-        details = jwt.decode(url, client.id, algorithms=[request.app.config.JWT_ALGORITHM])
+        details = jwt.decode(
+            url, client.id, algorithms=[request.app.config.JWT_ALGORITHM]
+        )
     except jwt.DecodeError as e:
         raise exception.JwtError({"url": {"url": str(e)}}) from e
 
     if "url" not in details:
-        raise exception.JwtError({"url": {"url": "Must be a mapping with `url` key"}})
+        raise exception.JwtError(
+            {"url": {"url": "Must be a mapping with `url` key"}}
+        )
 
-    async for path, name, content, _resp in utils.stream_downloaded_files([details]):
-        content_type=details.get("content-type", _resp.content_type)
+    async for path, name, content, _resp in utils.stream_downloaded_files(
+        [details]
+    ):
+        content_type = details.get("content-type", _resp.content_type)
 
         async def stream_fn(response):
             async for chunk in content.iter_chunked(utils.chunk_size):

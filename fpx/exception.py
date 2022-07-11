@@ -1,4 +1,3 @@
-
 class FpxError(Exception):
     _status = 500
 
@@ -10,8 +9,10 @@ class FpxError(Exception):
 class NotFound(FpxError):
     _status = 404
 
+
 class NotAuthorized(FpxError):
     _status = 403
+
 
 class JwtError(FpxError):
     _status = 422

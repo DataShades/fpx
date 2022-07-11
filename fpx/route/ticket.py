@@ -57,9 +57,9 @@ async def download(request: request.Request, id: str) -> response.HTTPResponse:
         raise exception.NotFound({"id": "Ticket not found"})
 
     if not ticket.is_available:
-        raise exception.NotAuthorized({
-            "access": "You must wait untill download is available"
-        })
+        raise exception.NotAuthorized(
+            {"access": "You must wait untill download is available"}
+        )
 
     async def stream_fn(response):
         with utils.ActiveDownload(request.app.ctx.active_downloads, id):

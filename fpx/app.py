@@ -7,6 +7,7 @@ from .middleware import add_middlewares
 from .route import add_routes
 from . import exception
 
+
 async def handle_validation_error(request, err):
     return response.json({"errors": err.exc.messages}, status=422)
 

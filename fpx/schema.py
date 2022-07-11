@@ -61,6 +61,7 @@ class Base64Json(fields.Field):
 class StreamUrl(Schema):
     client = fields.Str(required=True)
 
+
 class TicketIndex(Schema):
     page = fields.Int(load_default=1, validate=validate.Range(1))
 

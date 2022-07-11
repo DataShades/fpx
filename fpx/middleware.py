@@ -9,7 +9,11 @@ def authentication(request):
     if id_:
         client = request.ctx.db.query(Client).get(id_)
 
-    if not client and getattr(request.route.ctx, "requires_client", False):
+    if (
+        not client
+        and request.route
+        and getattr(request.route.ctx, "requires_client", False)
+    ):
         return response.json(
             {
                 "errors": {
