@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
 import time
 from asyncio.exceptions import TimeoutError
 from io import RawIOBase
+from typing import Any
 from urllib.parse import unquote_plus
 from zipfile import ZipFile, ZipInfo
 
@@ -45,13 +48,14 @@ class Stream(RawIOBase):
         return self._size
 
 
+
 async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
     stream = Stream()
     with ZipFile(
         stream,
         mode="w",
     ) as zf:
-        async for path, name, content in stream_downloaded_files(ticket.items):
+        async for path, name, content, _resp in stream_downloaded_files(ticket.items):
             z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
             with zf.open(z_info, mode="w", force_zip64=True) as dest:
                 try:
@@ -69,7 +73,6 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
                     log.exception(f"TimeoutError while writing {z_info}")
         zf.comment = b"Written by FPX"
     yield stream.get()
-
 
 async def stream_downloaded_files(items):
     async with aiohttp.ClientSession() as session:
@@ -104,7 +107,7 @@ async def stream_downloaded_files(items):
                         match = disposition_re.match(disposition)
                         if match:
                             name = match.group(1)
-                    yield path, name, resp.content
+                    yield path, name, resp.content, resp
             except ClientError:
                 log.exception(f"Failed on {url}")
 

@@ -14,7 +14,7 @@ from webargs_sanic.sanicparser import use_kwargs
 from fpx import utils
 from fpx.model import Ticket
 
-from .. import schema
+from .. import schema, exception
 
 log = logging.getLogger(__name__)
 
@@ -54,17 +54,12 @@ async def download(request: request.Request, id: str) -> response.HTTPResponse:
     ticket = db.query(Ticket).get(id)
 
     if ticket is None:
-        return response.json({"errors": {"id": "Ticket not found"}}, 404)
+        raise exception.NotFound({"id": "Ticket not found"})
 
     if not ticket.is_available:
-        return response.json(
-            {
-                "errors": {
-                    "access": "You must wait untill download is available"
-                }
-            },
-            403,
-        )
+        raise exception.NotAuthorized({
+            "access": "You must wait untill download is available"
+        })
 
     async def stream_fn(response):
         with utils.ActiveDownload(request.app.ctx.active_downloads, id):
@@ -88,7 +83,7 @@ async def wait(request: request.Request, ws: WebsocketImplProtocol, id: str):
     active = request.app.ctx.active_downloads
     ticket = db.query(Ticket).get(id)
     if ticket is None:
-        return response.json({"error": "Ticket not found"}, 404)
+        raise exception.NotFound({"id": "Ticket not found"})
 
     def _position():
         offset = q.index(id) if id in q else len(q)

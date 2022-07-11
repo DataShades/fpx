@@ -21,6 +21,8 @@ def _defaults() -> dict[str, Any]:
         },
         SIMULTANEOURS_DOWNLOADS_LIMIT=2,
         FALLBACK_ERROR_FORMAT="json",
+
+        JWT_ALGORITHM="HS256",
     )
 
 
