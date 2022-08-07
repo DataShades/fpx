@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import base64
 import json
+from threading import main_thread
 
-from marshmallow import Schema, fields, validate
+from marshmallow import Schema, ValidationError, fields, validate, validates_schema
 
 
 class Base64Json(fields.Field):
@@ -72,3 +73,8 @@ class TicketGenerate(Schema):
     options = Base64Json(
         required=False, load_default=dict, metadata={"fpx_expect": dict}
     )
+
+    @validates_schema
+    def validate_ticket_type(self, data, **kwargs):
+        if data["type"] == "stream" and len(data["items"]) != 1:
+            raise ValidationError({"type": ["Ticket with the type `stream` allows only one item"]})

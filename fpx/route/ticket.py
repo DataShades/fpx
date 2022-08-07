@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from typing import Any
+import aiohttp
 
 from sanic import Blueprint, request, response
 from sanic.exceptions import WebsocketClosed
@@ -46,6 +47,38 @@ async def generate(
     request.ctx.db.commit()
 
     return response.json(ticket.for_json(include_id=True))
+
+
+@ticket.route("/<id>/download/single")
+async def download_single(request: request.Request, id: str) -> response.HTTPResponse:
+    db = request.ctx.db
+    ticket = db.query(Ticket).get(id)
+
+    if ticket is None:
+        raise exception.NotFound({"id": "Ticket not found"})
+
+    if len(ticket.items) != 1:
+        raise exception.RequestError({"items": "Not a single-item ticket"})
+
+    async with aiohttp.ClientSession() as session:
+        async for fetched_file in utils.fetch_file(ticket.items[0], session):
+            _path, name, content, resp = fetched_file
+
+            content_type = resp.content_type
+
+            async def stream_fn(response):
+                db.delete(ticket)
+                db.commit()
+                async for chunk in content.iter_chunked(utils.chunk_size):
+                    await response.write(chunk)
+
+            return response.ResponseStream(
+                stream_fn,
+                content_type=content_type,
+                headers={"Content-disposition": f'inline; filename="{name}"'}
+            )
+
+        raise exception.NotFound({"items": "File not found"})
 
 
 @ticket.route("/<id>/download")

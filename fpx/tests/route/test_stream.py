@@ -8,7 +8,7 @@ def test_no_client(rc, url_for):
     assert "client" in resp.json["errors"]["query"]
 
 
-def test_no_client(rc, url_for):
+def test_not_real_client(rc, url_for):
     _, resp = rc.get(url_for("stream.url", url="hello", client="test"))
     assert resp.status == 404
 

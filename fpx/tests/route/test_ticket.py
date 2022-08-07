@@ -109,6 +109,38 @@ class TestGenerate:
         assert ticket.items == ["http://google.com"]
         assert ticket.type == payload["type"]
 
+    def test_stream_ticket_with_one_item(self, rc, url_for, client, db):
+        payload = {"type": "stream", "items": ["http://google.com"]}
+        _, resp = rc.post(
+            url_for("ticket.generate"),
+            headers={"authorize": client.id},
+            json=payload,
+        )
+        assert resp.status == 200
+
+    def test_stream_ticket_with_zero_items(self, rc, url_for, client, db):
+        payload = {"type": "stream", "items": []}
+        _, resp = rc.post(
+            url_for("ticket.generate"),
+            headers={"authorize": client.id},
+            json=payload,
+        )
+        assert resp.status == 422
+        assert set(resp.json["errors"]["json"].keys()) == {"type"}
+
+    def test_stream_ticket_with_multiple_items(self, rc, url_for, client, db):
+        payload = {
+            "type": "stream",
+            "items": ["http://google.com", "http://not-a-google.com"],
+        }
+        _, resp = rc.post(
+            url_for("ticket.generate"),
+            headers={"authorize": client.id},
+            json=payload,
+        )
+        assert resp.status == 422
+        assert set(resp.json["errors"]["json"].keys()) == {"type"}
+
     def test_valid_raw_payload(self, rc, url_for, client, db):
         payload = {"type": "url", "items": ["http://google.com"]}
         _, resp = rc.post(
@@ -150,3 +182,13 @@ class TestDownload:
         for url in urls:
             name = os.path.basename(url.rstrip("/"))
             assert z.read(name) == f"hello world, {url}".encode("utf8")
+
+    def test_download_single(self, rc, url_for, ticket_factory, faker, rmock):
+        url = faker.uri()
+        rmock.get(url, body=f"hello world, {url}")
+
+        ticket = ticket_factory(content=json.dumps([url]), is_available=True)
+        _, resp = rc.get(url_for("ticket.download_single", id=ticket.id))
+
+        assert resp.status == 200
+        assert resp.content == f"hello world, {url}".encode("utf8")

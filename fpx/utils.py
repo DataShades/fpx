@@ -79,39 +79,44 @@ async def stream_ticket(ticket: Ticket, chunk_size: int = chunk_size):
 async def stream_downloaded_files(items):
     async with aiohttp.ClientSession() as session:
         for item in items:
-            name = (None,)
-            path = ""
-            headers = {}
-            if isinstance(item, dict):
-                url = item["url"]
-                path = item.get("path", path)
-                name = item.get("name") or os.path.basename(url)
-                headers = item.get("headers", headers)
-            else:
-                url = item
-                name = os.path.basename(url.rstrip("/"))
-            try:
-                simplified_name = os.path.basename(
-                    unquote_plus(unquote_plus(unquote_plus(name)))
-                )
-                if simplified_name:
-                    name = simplified_name
-            except Exception:
-                log.exception("Cannot simplify name: %s", name)
-            try:
-                async with session.get(
-                    url,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=request_timeout),
-                ) as resp:
-                    disposition = resp.headers.get("content-disposition")
-                    if disposition and name not in item:
-                        match = disposition_re.match(disposition)
-                        if match:
-                            name = match.group(1)
-                    yield path, name, resp.content, resp
-            except ClientError:
-                log.exception(f"Failed on {url}")
+            async for result in fetch_file(item, session):
+                yield result
+
+
+async def fetch_file(item, session: aiohttp.ClientSession):
+    name = (None,)
+    path = ""
+    headers = {}
+    if isinstance(item, dict):
+        url = item["url"]
+        path = item.get("path", path)
+        name = item.get("name") or os.path.basename(url)
+        headers = item.get("headers", headers)
+    else:
+        url = item
+        name = os.path.basename(url.rstrip("/"))
+    try:
+        simplified_name = os.path.basename(
+            unquote_plus(unquote_plus(unquote_plus(name)))
+        )
+        if simplified_name:
+            name = simplified_name
+    except Exception:
+        log.exception("Cannot simplify name: %s", name)
+    try:
+        async with session.get(
+            url,
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=request_timeout),
+        ) as resp:
+            disposition = resp.headers.get("content-disposition")
+            if disposition and name not in item:
+                match = disposition_re.match(disposition)
+                if match:
+                    name = match.group(1)
+            yield path, name, resp.content, resp
+    except ClientError:
+        log.exception(f"Failed on {url}")
 
 
 class ActiveDownload:

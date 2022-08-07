@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import asyncio
-import json
-import logging
-from typing import Any
+import aiohttp
 
 import jwt
 
 from sanic import Blueprint, request, response
-from sanic.exceptions import WebsocketClosed
-from sanic.server.websockets.impl import WebsocketImplProtocol
-from sqlalchemy.orm.query import Query
 from webargs_sanic.sanicparser import use_kwargs
 
 from fpx import utils
@@ -40,17 +34,19 @@ async def url(request: request.Request, url, client):
             {"url": {"url": "Must be a mapping with `url` key"}}
         )
 
-    async for path, name, content, _resp in utils.stream_downloaded_files(
-        [details]
-    ):
-        content_type = details.get("content-type", _resp.content_type)
+    async with aiohttp.ClientSession() as session:
+        async for fetched_file in utils.fetch_file(details, session):
+            _path, _name, content, resp = fetched_file
+            content_type = details.get("content-type", resp.content_type)
 
-        async def stream_fn(response):
-            async for chunk in content.iter_chunked(utils.chunk_size):
-                await response.write(chunk)
+            async def stream_fn(response):
+                async for chunk in content.iter_chunked(utils.chunk_size):
+                    await response.write(chunk)
 
-        return response.ResponseStream(
-            stream_fn,
-            headers=details.get("response_headers", {}),
-            content_type=content_type,
-        )
+            return response.ResponseStream(
+                stream_fn,
+                headers=details.get("response_headers", {}),
+                content_type=content_type,
+            )
+
+        raise exception.NotFound({"items": "File not found"})
