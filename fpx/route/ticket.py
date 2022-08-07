@@ -75,7 +75,7 @@ async def download_single(request: request.Request, id: str) -> response.HTTPRes
             return response.ResponseStream(
                 stream_fn,
                 content_type=content_type,
-                headers={"Content-disposition": f'inline; filename="{name}"'}
+                headers={"Content-disposition": f'attachment; filename="{name}"'}
             )
 
         raise exception.NotFound({"items": "File not found"})
