@@ -4,7 +4,6 @@ import asyncio
 import json
 import logging
 from typing import Any
-import aiohttp
 
 from sanic import Blueprint, request, response
 from sanic.exceptions import WebsocketClosed
@@ -14,6 +13,7 @@ from webargs_sanic.sanicparser import use_kwargs
 
 from fpx import utils
 from fpx.model import Ticket
+from fpx.pipes import Pipe
 
 from .. import schema, exception
 
@@ -43,46 +43,17 @@ async def generate(
     request: request.Request, type: str, items: Any, options: dict[str, Any]
 ) -> response.HTTPResponse:
     ticket = Ticket(type=type, items=items, options=options)
+    if request.app.config.FPX_NO_QUEUE:
+        ticket.is_available = True
+
     request.ctx.db.add(ticket)
     request.ctx.db.commit()
 
     return response.json(ticket.for_json(include_id=True))
 
 
-@ticket.route("/<id>/download/single")
-async def download_single(request: request.Request, id: str) -> response.HTTPResponse:
-    db = request.ctx.db
-    ticket = db.query(Ticket).get(id)
-
-    if ticket is None:
-        raise exception.NotFound({"id": "Ticket not found"})
-
-    if len(ticket.items) != 1:
-        raise exception.RequestError({"items": "Not a single-item ticket"})
-
-    async with aiohttp.ClientSession() as session:
-        async for fetched_file in utils.fetch_file(ticket.items[0], session):
-            _path, name, content, resp = fetched_file
-
-            content_type = resp.content_type
-
-            async def stream_fn(response):
-                db.delete(ticket)
-                db.commit()
-                async for chunk in content.iter_chunked(utils.chunk_size):
-                    await response.write(chunk)
-
-            return response.ResponseStream(
-                stream_fn,
-                content_type=content_type,
-                headers={"Content-disposition": f'attachment; filename="{name}"'}
-            )
-
-        raise exception.NotFound({"items": "File not found"})
-
-
 @ticket.route("/<id>/download")
-async def download(request: request.Request, id: str) -> response.HTTPResponse:
+async def download(request: request.Request, id: str):
     db = request.ctx.db
     ticket = db.query(Ticket).get(id)
 
@@ -94,19 +65,24 @@ async def download(request: request.Request, id: str) -> response.HTTPResponse:
             {"access": "You must wait untill download is available"}
         )
 
-    async def stream_fn(response):
-        with utils.ActiveDownload(request.app.ctx.active_downloads, id):
-            db.delete(ticket)
-            db.commit()
-            async for chunk in utils.stream_ticket(ticket):
-                await response.write(chunk)
+    response = await request.respond()
+    assert response
 
-    filename = ticket.options.get("filename", "collection.zip")
-    return response.ResponseStream(
-        stream_fn,
-        headers={"content-disposition": f'attachment; filename="{filename}"'},
-        content_type="application/zip",
-    )
+    pipe = await Pipe.choose(ticket)
+
+    response.content_type = pipe.content_type()
+    filename = pipe.filename()
+    response.headers[
+        "content-disposition"
+    ] = f'attachment; filename="{filename}"'
+
+    with utils.ActiveDownload(request.app.ctx.active_downloads, id):
+        db.delete(ticket)
+        db.commit()
+        async for chunk in pipe.chunks():
+            await response.send(chunk)
+
+    await response.eof()
 
 
 @ticket.websocket("/<id>/wait")

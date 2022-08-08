@@ -80,7 +80,7 @@ class TicketFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = m.Session
         sqlalchemy_session_persistence = "commit"
 
-    type = "url"
+    type = "zip"
     content = '["http://example.com"]'
     # options
     # is_available

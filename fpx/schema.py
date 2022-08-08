@@ -18,6 +18,7 @@ class Base64Json(fields.Field):
     }
 
     def _fpx_is_allowed(self, v):
+
         allowed = self.metadata.get("fpx_allow")
         if not allowed:
             allowed = self.metadata.get("fpx_expect", object)
@@ -68,7 +69,7 @@ class TicketIndex(Schema):
 
 
 class TicketGenerate(Schema):
-    type = fields.Str(required=True)
+    type = fields.Str(required=True, validate=validate.OneOf(["zip", "stream"]))
     items = Base64Json(required=True, metadata={"fpx_expect": list})
     options = Base64Json(
         required=False, load_default=dict, metadata={"fpx_expect": dict}

@@ -57,7 +57,7 @@ class TestGenerate:
         assert set(resp.json["errors"]["json"].keys()) == {"type", "items"}
 
     def test_items_not_a_string_or_expected(self, rc, url_for, client):
-        payload = {"type": "url", "items": 123}
+        payload = {"type": "zip", "items": 123}
         _, resp = rc.post(
             url_for("ticket.generate"),
             headers={"authorize": client.id},
@@ -67,7 +67,7 @@ class TestGenerate:
         assert set(resp.json["errors"]["json"].keys()) == {"items"}
 
     def test_items_not_a_base64(self, rc, url_for, client):
-        payload = {"type": "url", "items": "hello world"}
+        payload = {"type": "zip", "items": "hello world"}
         _, resp = rc.post(
             url_for("ticket.generate"),
             headers={"authorize": client.id},
@@ -78,7 +78,7 @@ class TestGenerate:
 
     def test_items_not_a_json(self, rc, url_for, client):
         payload = {
-            "type": "url",
+            "type": "zip",
             "items": base64.encodebytes(b"hello world").decode("utf8"),
         }
         _, resp = rc.post(
@@ -91,7 +91,7 @@ class TestGenerate:
 
     def test_valid_encoded_payload(self, rc, url_for, client, db):
         payload = {
-            "type": "url",
+            "type": "zip",
             "items": base64.encodebytes(b'["http://google.com"]').decode(
                 "utf8"
             ),
@@ -142,7 +142,7 @@ class TestGenerate:
         assert set(resp.json["errors"]["json"].keys()) == {"type"}
 
     def test_valid_raw_payload(self, rc, url_for, client, db):
-        payload = {"type": "url", "items": ["http://google.com"]}
+        payload = {"type": "zip", "items": ["http://google.com"]}
         _, resp = rc.post(
             url_for("ticket.generate"),
             headers={"authorize": client.id},
@@ -183,12 +183,12 @@ class TestDownload:
             name = os.path.basename(url.rstrip("/"))
             assert z.read(name) == f"hello world, {url}".encode("utf8")
 
-    def test_download_single(self, rc, url_for, ticket_factory, faker, rmock):
+    def test_download_stream(self, rc, url_for, ticket_factory, faker, rmock):
         url = faker.uri()
         rmock.get(url, body=f"hello world, {url}")
 
-        ticket = ticket_factory(content=json.dumps([url]), is_available=True)
-        _, resp = rc.get(url_for("ticket.download_single", id=ticket.id))
+        ticket = ticket_factory(type="stream", content=json.dumps([url]), is_available=True)
+        _, resp = rc.get(url_for("ticket.download", id=ticket.id))
 
         assert resp.status == 200
         assert resp.content == f"hello world, {url}".encode("utf8")

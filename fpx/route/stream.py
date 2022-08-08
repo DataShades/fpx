@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import aiohttp
 
 import jwt
 
-from sanic import Blueprint, request, response
+from sanic import Blueprint, request
 from webargs_sanic.sanicparser import use_kwargs
 
 from fpx import utils
-from fpx.model import Client
+from fpx.model import Client, Ticket
 
-from .. import schema, exception
+from .. import schema, exception, pipes
 
 stream = Blueprint("stream", url_prefix="/stream")
 
@@ -18,6 +17,7 @@ stream = Blueprint("stream", url_prefix="/stream")
 @stream.get("/url/<url>")
 @use_kwargs(schema.StreamUrl(), location="query")
 async def url(request: request.Request, url, client):
+    db = request.ctx.db
     client = request.ctx.db.query(Client).filter_by(name=client).one_or_none()
     if not client:
         raise exception.NotFound({"client": "Client not found"})
@@ -34,19 +34,27 @@ async def url(request: request.Request, url, client):
             {"url": {"url": "Must be a mapping with `url` key"}}
         )
 
-    async with aiohttp.ClientSession() as session:
-        async for fetched_file in utils.fetch_file(details, session):
-            _path, _name, content, resp = fetched_file
-            content_type = details.get("content-type", resp.content_type)
+    ticket = Ticket(type="stream", items=[details["url"]])
+    db.add(ticket)
+    db.commit()
 
-            async def stream_fn(response):
-                async for chunk in content.iter_chunked(utils.chunk_size):
-                    await response.write(chunk)
+    db.refresh(ticket)
+    response = await request.respond()
+    assert response
 
-            return response.ResponseStream(
-                stream_fn,
-                headers=details.get("response_headers", {}),
-                content_type=content_type,
-            )
+    pipe = await pipes.Pipe.choose(ticket)
 
-        raise exception.NotFound({"items": "File not found"})
+    response.content_type = details.get("content-type", pipe.content_type())
+    filename = pipe.filename()
+    response.headers[
+        "content-disposition"
+    ] = f'attachment; filename="{filename}"'
+    response.headers.update(details.get("response_headers", {}))
+
+    with utils.ActiveDownload(request.app.ctx.active_downloads, id):
+        db.delete(ticket)
+        db.commit()
+        async for chunk in pipe.chunks():
+            await response.send(chunk)
+
+    await response.eof()

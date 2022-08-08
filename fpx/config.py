@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
+from sanic.exceptions import LoadFileException
 from sanic.config import Config
 from sqlalchemy import create_engine
 
 from . import model
+
+log = logging.getLogger(__name__)
 
 
 def _defaults() -> dict[str, Any]:
@@ -22,6 +26,7 @@ def _defaults() -> dict[str, Any]:
         SIMULTANEOURS_DOWNLOADS_LIMIT=2,
         FALLBACK_ERROR_FORMAT="json",
         JWT_ALGORITHM="HS256",
+        FPX_NO_QUEUE=True,
     )
 
 
@@ -30,7 +35,10 @@ class FpxConfig(Config):
         super().__init__()
         self.update_config(_defaults())
         self.load_environment_vars(prefix="FPX_")
-        self.update_config("${FPX_CONFIG}")
+        try:
+            self.update_config("${FPX_CONFIG}")
+        except LoadFileException:
+            log.debug("Cannot locate config file($FPX_CONFIG)")
 
         engine = create_engine(self.DB_URL, **self.DB_EXTRAS)
         model.Session.remove()
