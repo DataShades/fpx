@@ -187,7 +187,9 @@ class TestDownload:
         url = faker.uri()
         rmock.get(url, body=f"hello world, {url}")
 
-        ticket = ticket_factory(type="stream", content=json.dumps([url]), is_available=True)
+        ticket = ticket_factory(
+            type="stream", content=json.dumps([url]), is_available=True
+        )
         _, resp = rc.get(url_for("ticket.download", id=ticket.id))
 
         assert resp.status == 200

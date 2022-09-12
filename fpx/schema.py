@@ -4,7 +4,13 @@ import base64
 import json
 from threading import main_thread
 
-from marshmallow import Schema, ValidationError, fields, validate, validates_schema
+from marshmallow import (
+    Schema,
+    ValidationError,
+    fields,
+    validate,
+    validates_schema,
+)
 
 
 class Base64Json(fields.Field):
@@ -18,7 +24,6 @@ class Base64Json(fields.Field):
     }
 
     def _fpx_is_allowed(self, v):
-
         allowed = self.metadata.get("fpx_allow")
         if not allowed:
             allowed = self.metadata.get("fpx_expect", object)
@@ -69,7 +74,9 @@ class TicketIndex(Schema):
 
 
 class TicketGenerate(Schema):
-    type = fields.Str(required=True, validate=validate.OneOf(["zip", "stream"]))
+    type = fields.Str(
+        required=True, validate=validate.OneOf(["zip", "stream"])
+    )
     items = Base64Json(required=True, metadata={"fpx_expect": list})
     options = Base64Json(
         required=False, load_default=dict, metadata={"fpx_expect": dict}
@@ -78,4 +85,10 @@ class TicketGenerate(Schema):
     @validates_schema
     def validate_ticket_type(self, data, **kwargs):
         if data["type"] == "stream" and len(data["items"]) != 1:
-            raise ValidationError({"type": ["Ticket with the type `stream` allows only one item"]})
+            raise ValidationError(
+                {
+                    "type": [
+                        "Ticket with the type `stream` allows only one item"
+                    ]
+                }
+            )

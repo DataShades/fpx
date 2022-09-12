@@ -1,29 +1,65 @@
 # FPX
 
-Standalone service for collecting content from multiple source into single file. Typical usecase is downloading multiple files as archive using single link. Internally FPX fetches content from the specified set of URLs and streams zip-compressed stream to the end users.
+Standalone service for collecting content from multiple source into single
+file. Typical usecase is downloading multiple files as archive using single
+link. Internally FPX fetches content from the specified set of URLs and streams
+zip-compressed stream to the end users.
 
-## AWS EC2 Deploy
 
-1. Install Python 3.8 or newer:
+# Requirements
+
+* Python v3.8 or newer
+* DB driver. If you are using SQLite, no extra modules required. For other
+  providers, install corresponding SQLAlchemy adapter. For example, if you are
+  using PostgreSQL, install `psycopg2`:
+  ```sh
+  pip install psycopg2
+  ```
+
+  FPX has a set of predefined lists of dependencies for providers that were
+  tested on development stage. You can just install all the required
+  dependencies using package extra, when installing FPX itself:
+  ```sh
+  pip install 'fpx[postgresql]'
+  ```
+
+  Supported options are:
+
+  * `postgresql`
+
+
+# Installation
+
+1. Install `fpx` package.
+   ```sh
+   pip install fpx
+   ```
+
+# Usage
+
+
+# Complete Installation Guide (AmazonLinux)
+
+1. Install Python 3.8 or newer using `pyenv`:
    ```sh
    # install build dependencies
    sudo yum install -y openssl-devel readline-devel zlib-devel bzip2-devel libffi-devel
 
-    # install `pyenv`
-    git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-    # this require `chmod +x $HOME` if you are going to use different user for running services with installed python executable
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
-    echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
+   # install `pyenv`
+   git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+   # this require `chmod +x $HOME` if you are going to use different user for running services with installed python executable
+   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
+   echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
+   echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
 
-    # install python
-    pyenv install 3.8.2
-    ```
+   # install python
+   pyenv install 3.8.2
+   ```
 
-1.  Create venv for FPX and install it:
+1.  Create virtual environment for FPX and install it:
     ```sh
     pyenv shell 3.8.2
-    cd /usr/lib/ckan
+    cd ~/.virtualenvs
     python -m venv fpx
     cd fpx
     source bin/activate
@@ -35,21 +71,18 @@ Standalone service for collecting content from multiple source into single file.
     echo '
     PORT = 12321
     # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service. If you planning to use multiple instances + load balancer, consider using PostgreSQL
-    DB_URL = "sqlite:////var/lib/ckan/default/fpx.db"
+    DB_URL = "sqlite:////home/user/.virtualenvs/fpx/fpx.db"
     # Any other options passed directly to the SQLAlchemy engine constructor(https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine)
     DB_EXTRAS = {
-    # "pool_size": 10,
-    # "max_overflow": 20,
+      # "pool_size": 10,
+      # "max_overflow": 20,
     }
-    # Maximum number of simultaneous downloads. In production, value between 10 and 100 should be used, depending on server's bandwidth. Higher value won't affect server perfomance, but will make downloads slower due to bandwidth limitations.
-    SIMULTANEOURS_DOWNLOADS_LIMIT = 20
-    ' > /etc/ckan/default/fpx.py
+    ' > /etc/fpx/fpx.py
     ```
 
-1. Initialize database and create access token for client. It can be
-   stored later inside CKAN ini file as `fpx.client.secret`:
+1. Initialize database and create access token for client:
    ```sh
-    export FPX_CONFIG=/etc/ckan/default/fpx.py
+    export FPX_CONFIG=/etc/fpx/fpx.py
     fpx db up
     fpx client add my-first-fpx-client  # use any name, that match `[\w_-]`
     ```
@@ -58,14 +91,14 @@ Standalone service for collecting content from multiple source into single file.
    manual suggests using `apache` user when configuring supervisor's
    process, so following command required:
    ```sh
-   chown apache:apache /var/lib/ckan/default/fpx.db
+   chown apache:apache /home/user/.virtualenvs/fpx/fpx.db
    ```
 
 1. Test service:
    ```sh
-    FPX_CONFIG=/etc/ckan/default/fpx.py fpx server run
+    FPX_CONFIG=/etc/fpx/fpx.py fpx server run
     # or, if you want to explicitely use python interpreter
-    FPX_CONFIG=/etc/ckan/default/fpx.py python -m fpx
+    FPX_CONFIG=/etc/fpx/fpx.py python -m fpx
     ```
 
 1. Configure system.d/supervisor/etc. unit for fpx. Make sure, that
@@ -76,9 +109,9 @@ Standalone service for collecting content from multiple source into single file.
     [program:fpx-worker]
 
     ; Use the full paths to the virtualenv and your configuration file here.
-    command=/usr/lib/ckan/fpx/bin/python -m fpx
+    command=/home/user/.virtualenv/fpx/bin/python -m fpx
 
-    environment=FPX_CONFIG=/etc/ckan/default/fpx.py
+    environment=FPX_CONFIG=/etc/fpx/fpx.py
 
     ; User the worker runs as.
     user=apache
@@ -106,9 +139,8 @@ Standalone service for collecting content from multiple source into single file.
     stopwaitsecs = 600
     ```
 
-1. FPX service must be available via public url(and CKAN ini file requires this
-   URL under `fpx.service.url` config option). As written in
-   []documentation](https://sanic.readthedocs.io/en/latest/sanic/deploying.html#deploying),
+1. FPX service must be available via public url. As written in
+   [documentation](https://sanic.readthedocs.io/en/latest/sanic/deploying.html#deploying),
    no additional layers required. But if you decide to use it with Nginx, the
    [following
    link](https://sanic.readthedocs.io/en/latest/sanic/nginx.html#nginx-configuration)

@@ -134,6 +134,7 @@ class StreamPipe(Pipe):
         async for path, name, content, resp in utils.stream_downloaded_files(
             self.ticket.items
         ):
+
             async def crawler():
                 async for chunk in content.iter_chunked(CHUNK_SIZE):
                     yield chunk

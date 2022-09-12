@@ -17,5 +17,6 @@ class NotAuthorized(FpxError):
 class JwtError(FpxError):
     _status = 422
 
+
 class RequestError(FpxError):
     _status = 400
