@@ -144,8 +144,8 @@ zip-compressed stream to the end users.
    no additional layers required. But if you decide to use it with Nginx, the
    [following
    link](https://sanic.readthedocs.io/en/latest/sanic/nginx.html#nginx-configuration)
-   may be useful. Note, FPX is using websockets(if it can somehow affect
-   configuration).
+   may be useful. Note, if `FPX_NO_QUEUE` set to `False`, FPX is using
+   websockets (if it can somehow affect configuration).
 
    Example of Nginx section for FPX:
    ```conf
@@ -156,8 +156,11 @@ zip-compressed stream to the end users.
       proxy_http_version 1.1;
       proxy_request_buffering off;
       proxy_buffering off;
+
+      # When FPX_NO_QUEUE option set to `False`
       proxy_set_header connection "upgrade";
       proxy_set_header upgrade $http_upgrade;
+
       # In emergency comment out line to force caching
       # proxy_ignore_headers X-Accel-Expires Expires Cache-Control;
    }
@@ -167,12 +170,12 @@ zip-compressed stream to the end users.
    ```cond
    # mod_proxy
    # mod_proxy_http
-   # mod_proxy_wstunnel
-   # mod_rewrite
-   # ...
    ProxyPass /fpx/ http://0.0.0.0:8000/
    ProxyPassReverse /fpx/ http://0.0.0.0:8000/
 
+   # When FPX_NO_QUEUE option set to `False`
+   # mod_proxy_wstunnel
+   # mod_rewrite
    RewriteEngine on
    RewriteCond %{HTTP:UPGRADE} ^WebSocket$ [NC]
    RewriteCond %{HTTP:CONNECTION} ^Upgrade$ [NC]
