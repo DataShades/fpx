@@ -68,19 +68,18 @@ async def download(request: request.Request, id: str):
     response = await request.respond()
     assert response
 
-    pipe = await Pipe.choose(ticket)
+    async with Pipe.choose(ticket) as pipe:
+        response.content_type = pipe.content_type()
+        filename = pipe.filename()
+        response.headers[
+            "content-disposition"
+        ] = f'attachment; filename="{filename}"'
 
-    response.content_type = pipe.content_type()
-    filename = pipe.filename()
-    response.headers[
-        "content-disposition"
-    ] = f'attachment; filename="{filename}"'
-
-    with utils.ActiveDownload(request.app.ctx.active_downloads, id):
-        db.delete(ticket)
-        db.commit()
-        async for chunk in pipe.chunks():
-            await response.send(chunk)
+        with utils.ActiveDownload(request.app.ctx.active_downloads, id):
+            db.delete(ticket)
+            db.commit()
+            async for chunk in pipe.chunks():
+                await response.send(chunk)
 
     await response.eof()
 

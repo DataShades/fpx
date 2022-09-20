@@ -3,6 +3,7 @@ import abc
 import os
 import time
 import logging
+from typing_extensions import Self
 
 from zipfile import ZipFile, ZipInfo
 from typing import AsyncIterable, cast
@@ -46,7 +47,7 @@ class Pipe(abc.ABC):
     _filename = "download"
 
     @classmethod
-    async def choose(cls, ticket: Ticket):
+    def choose(cls, ticket: Ticket):
         if ticket.type == "zip":
             pipe = ZipPipe(ticket)
         elif ticket.type == "stream":
@@ -55,14 +56,15 @@ class Pipe(abc.ABC):
             raise exception.RequestError(
                 {"type": f"Unsupported ticket type: {ticket.type}"}
             )
-
-        await pipe.prepare()
         return pipe
 
     def __init__(self, ticket: Ticket):
         self.ticket = ticket
 
-    async def prepare(self):
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
         pass
 
     def content_type(self):
@@ -80,10 +82,12 @@ class ZipPipe(Pipe):
     _content_type = "application/zip"
     _filename = "collection.zip"
 
-    async def prepare(self):
+    async def __aenter__(self):
         name = self.ticket.options.get("filename")
         if name:
             self._filename = name
+
+        return self
 
     async def chunks(self) -> AsyncIterable[bytes]:
         stream = _Stream()
@@ -119,15 +123,22 @@ class StreamPipe(Pipe):
         self._content_type = None
         self._filename = None
 
-    async def prepare(self):
-        name, type_, content = await self._crawl_file()
-        self._filename = name
-        self._content_type = type_
-        self._content = content
+    async def __aenter__(self):
+        self._gen = self._crawl_file()
+        async for name, type_, crawler in self._gen:
+            self._filename = name
+            self._content_type = type_
+            self._content = crawler()
+            break
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        async for _ in self._gen:
+            pass
 
     async def chunks(self) -> AsyncIterable[bytes]:
         assert self._content
-        async for chunk in self._content():
+        async for chunk in self._content:
             yield cast(bytes, chunk)
 
     async def _crawl_file(self):
@@ -139,6 +150,4 @@ class StreamPipe(Pipe):
                 async for chunk in content.iter_chunked(CHUNK_SIZE):
                     yield chunk
 
-            return name, resp.content_type, crawler
-
-        raise exception.RequestError({"items": "Cannot download a file"})
+            yield name, resp.content_type, crawler

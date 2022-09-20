@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlparse
 
 import aiohttp
 from aiohttp.client_exceptions import ClientError
@@ -23,19 +23,33 @@ async def stream_downloaded_files(items):
                 yield result
 
 
+def _name_from_url(url: str) -> str:
+    parsed = urlparse(url)
+    name = parsed.path.rstrip("/")
+
+    if not name:
+        name = parsed.hostname
+
+    if not name:
+        name = url
+
+    return os.path.basename(name)
+
+
 async def fetch_file(item, session: aiohttp.ClientSession):
     name = (None,)
     path = ""
     headers = {}
+
     if isinstance(item, dict):
         url = item["url"]
         path = item.get("path", path)
-        name = item.get("name") or os.path.basename(url)
+        name = item.get("name") or _name_from_url(url)
         headers = item.get("headers", headers)
     else:
         url = item
+        name = _name_from_url(url)
 
-        name = os.path.basename(url.rstrip("/"))
     try:
         simplified_name = os.path.basename(
             unquote_plus(unquote_plus(unquote_plus(name)))
@@ -44,6 +58,7 @@ async def fetch_file(item, session: aiohttp.ClientSession):
             name = simplified_name
     except Exception:
         log.exception("Cannot simplify name: %s", name)
+
     try:
         async with session.get(
             url,
@@ -55,6 +70,7 @@ async def fetch_file(item, session: aiohttp.ClientSession):
                 match = disposition_re.match(disposition)
                 if match:
                     name = match.group(1)
+
             yield path, name, resp.content, resp
     except ClientError:
         log.exception(f"Failed on {url}")

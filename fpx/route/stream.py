@@ -42,19 +42,18 @@ async def url(request: request.Request, url, client):
     response = await request.respond()
     assert response
 
-    pipe = await pipes.Pipe.choose(ticket)
+    async with pipes.Pipe.choose(ticket) as pipe:
+        response.content_type = details.get("content-type", pipe.content_type())
+        filename = pipe.filename()
+        response.headers[
+            "content-disposition"
+        ] = f'attachment; filename="{filename}"'
+        response.headers.update(details.get("response_headers", {}))
 
-    response.content_type = details.get("content-type", pipe.content_type())
-    filename = pipe.filename()
-    response.headers[
-        "content-disposition"
-    ] = f'attachment; filename="{filename}"'
-    response.headers.update(details.get("response_headers", {}))
-
-    with utils.ActiveDownload(request.app.ctx.active_downloads, id):
-        db.delete(ticket)
-        db.commit()
-        async for chunk in pipe.chunks():
-            await response.send(chunk)
+        with utils.ActiveDownload(request.app.ctx.active_downloads, id):
+            db.delete(ticket)
+            db.commit()
+            async for chunk in pipe.chunks():
+                await response.send(chunk)
 
     await response.eof()
