@@ -194,3 +194,16 @@ class TestDownload:
 
         assert resp.status == 200
         assert resp.content == f"hello world, {url}".encode("utf8")
+
+    def test_download_huge_stream(self, rc, url_for, ticket_factory, faker, rmock):
+        size = 1024 * 1024 * 10
+        url = faker.uri()
+        rmock.get(url, body="0" * size)
+
+        ticket = ticket_factory(
+            type="stream", content=json.dumps([url]), is_available=True
+        )
+        _, resp = rc.get(url_for("ticket.download", id=ticket.id))
+
+        assert resp.status == 200
+        assert len(resp.content) == size
