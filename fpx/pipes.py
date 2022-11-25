@@ -9,6 +9,8 @@ from zipfile import ZipFile, ZipInfo
 from typing import AsyncIterable, cast
 from io import RawIOBase
 
+from sanic import request
+
 from fpx import exception
 from fpx.model import Ticket
 
@@ -47,11 +49,14 @@ class Pipe(abc.ABC):
     _filename = "download"
 
     @classmethod
-    def choose(cls, ticket: Ticket):
+    def choose(cls, ticket: Ticket, request: request.Request):
         if ticket.type == "zip":
             pipe = ZipPipe(ticket)
         elif ticket.type == "stream":
-            pipe = StreamPipe(ticket)
+            if request.app.config.FPX_PIPE_SILLY_STREAM:
+                pipe = SillyStreamPipe(ticket)
+            else:
+                pipe = StreamPipe(ticket)
         else:
             raise exception.RequestError(
                 {"type": f"Unsupported ticket type: {ticket.type}"}
@@ -115,6 +120,30 @@ class ZipPipe(Pipe):
                         log.exception(f"TimeoutError while writing {z_info}")
             zf.comment = b"Written by FPX"
         yield stream.get()
+
+
+class SillyStreamPipe(Pipe):
+    def __init__(self, ticket: Ticket):
+        super().__init__(ticket)
+        self._content_type = None
+        self._filename = None
+
+    async def __aenter__(self):
+        async for _path, name, _content, resp in utils.stream_downloaded_files(
+            self.ticket.items
+        ):
+            self._filename = name
+            self._content_type = resp.content_type
+            break
+        return self
+
+    async def chunks(self) -> AsyncIterable[bytes]:
+        async for path, name, content, resp in utils.stream_downloaded_files(
+            self.ticket.items
+        ):
+
+            async for chunk in content.iter_chunked(CHUNK_SIZE):
+                yield chunk
 
 
 class StreamPipe(Pipe):

@@ -42,7 +42,7 @@ async def url(request: request.Request, url, client):
     response = await request.respond()
     assert response
 
-    async with pipes.Pipe.choose(ticket) as pipe:
+    async with pipes.Pipe.choose(ticket, request) as pipe:
         response.content_type = details.get("content-type", pipe.content_type())
         filename = pipe.filename()
         response.headers[

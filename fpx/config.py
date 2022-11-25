@@ -27,6 +27,7 @@ def _defaults() -> dict[str, Any]:
         FALLBACK_ERROR_FORMAT="json",
         JWT_ALGORITHM="HS256",
         FPX_NO_QUEUE=True,
+        FPX_PIPE_SILLY_STREAM=True,
     )
 
 

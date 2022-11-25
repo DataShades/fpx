@@ -32,6 +32,7 @@ def test_valid_jwt(rc, url_for, client, rmock, faker):
     content_type = "application/pdf"
 
     rmock.get(url, body=body, headers={"content-type": content_type})
+    rmock.get(url, body=body, headers={"content-type": content_type})
 
     encoded = jwt.encode(
         {"url": url}, client.id, algorithm=rc.app.config.JWT_ALGORITHM

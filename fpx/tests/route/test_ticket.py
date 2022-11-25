@@ -186,6 +186,7 @@ class TestDownload:
     def test_download_stream(self, rc, url_for, ticket_factory, faker, rmock):
         url = faker.uri()
         rmock.get(url, body=f"hello world, {url}")
+        rmock.get(url, body=f"hello world, {url}")
 
         ticket = ticket_factory(
             type="stream", content=json.dumps([url]), is_available=True
@@ -198,6 +199,7 @@ class TestDownload:
     def test_download_huge_stream(self, rc, url_for, ticket_factory, faker, rmock):
         size = 1024 * 1024 * 10
         url = faker.uri()
+        rmock.get(url, body="0" * size)
         rmock.get(url, body="0" * size)
 
         ticket = ticket_factory(

@@ -68,7 +68,7 @@ async def download(request: request.Request, id: str):
     response = await request.respond()
     assert response
 
-    async with Pipe.choose(ticket) as pipe:
+    async with Pipe.choose(ticket, request) as pipe:
         response.content_type = pipe.content_type()
         filename = pipe.filename()
         response.headers[
