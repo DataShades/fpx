@@ -1,5 +1,6 @@
 import factory
 import pytest
+from sanic import Sanic
 from aioresponses import aioresponses
 from pytest_factoryboy import register
 
