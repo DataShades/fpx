@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.8](https://github.com/DataShades/fpx/compare/v0.4.7...v0.4.8) (2023-05-08)
+
+
+### Bug Fixes
+
+* pin websockets to <11.0 ([0dd7a60](https://github.com/DataShades/fpx/commit/0dd7a609c4703ab8fe1d07f32239e76444c1c246))
+
 ### [0.4.7](https://github.com/DataShades/fpx/compare/v0.4.6...v0.4.7) (2022-11-25)
 
 
