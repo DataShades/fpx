@@ -1,4 +1,5 @@
 from sanic import Sanic, response
+from sanic.worker.loader import AppLoader
 from webargs_sanic.sanicparser import HandleValidationError
 
 from . import exception
@@ -27,10 +28,14 @@ def make_app():
     return app
 
 
+loader = AppLoader(factory=make_app)
+
+
 def run_app(app: Sanic):
-    app.run(
+    app.prepare(
         host=app.config.HOST,
         port=app.config.PORT,
-        debug=app.config.DEBUG,
-        auto_reload=app.config.DEBUG,
+        dev=app.config.DEBUG,
     )
+
+    Sanic.serve(app, app_loader=loader)

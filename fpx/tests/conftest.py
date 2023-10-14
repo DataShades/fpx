@@ -2,6 +2,7 @@ import factory
 import pytest
 from aioresponses import aioresponses
 from pytest_factoryboy import register
+from sanic_testing import TestManager
 
 # from sanic_testing import TestManager
 from sanic_testing.reusable import ReusableClient
@@ -61,7 +62,7 @@ def app(monkeypatch, tmpdir):
     monkeypatch.setenv("FPX_CONFIG", settings.__file__)
     monkeypatch.setenv("FPX_DB_URL", f"sqlite:///{tmpdir}/fpx.db")
     application = make_app()
-
+    TestManager(application)
     _up(application)
     return application
 

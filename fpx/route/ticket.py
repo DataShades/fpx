@@ -56,7 +56,7 @@ async def generate(
 @ticket.route("/<id>/download")
 async def download(request: request.Request, id: str):
     db = request.ctx.db
-    ticket = db.query(Ticket).get(id)
+    ticket = db.get(Ticket, id)
 
     if ticket is None:
         raise exception.NotFoundError({"id": "Ticket not found"})
@@ -89,7 +89,7 @@ async def wait(request: request.Request, ws: WebsocketImplProtocol, id: str):
     db = request.ctx.db
     q = request.app.ctx.download_queue
     active = request.app.ctx.active_downloads
-    ticket = db.query(Ticket).get(id)
+    ticket = db.get(Ticket, id)
     if ticket is None:
         raise exception.NotFoundError({"id": "Ticket not found"})
 

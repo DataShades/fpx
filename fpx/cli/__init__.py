@@ -1,14 +1,14 @@
 import click
 
-from fpx.app import make_app
+from fpx.app import loader
 
 from . import client, db, server, ticket
 
 
 @click.group(no_args_is_help=True)
 @click.pass_context
-def fpx(ctx):
-    ctx.obj = make_app()
+def fpx(ctx: click.Context):
+    ctx.obj = loader.load()
 
 
 fpx.add_command(server.server)

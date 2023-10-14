@@ -57,6 +57,9 @@ sections = "FUTURE,STDLIB,FIRSTPARTY,THIRDPARTY,SELF,LOCALFOLDER"
 profile = "black"
 
 [tool.pytest.ini_options]
+testpaths = "fpx/tests"
+asyncio_mode = "auto"
+
 
 [tool.pyright]
 pythonVersion = "3.8"

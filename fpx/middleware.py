@@ -9,7 +9,7 @@ def authentication(request):
     client = None
     id_ = request.headers.get("authorize")
     if id_:
-        client = request.ctx.db.query(Client).get(id_)
+        client = request.ctx.db.get(Client, id_)
 
     if (
         not client
