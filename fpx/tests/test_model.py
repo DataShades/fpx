@@ -1,4 +1,4 @@
-import fpx.model as model
+from fpx import model
 
 
 def test_client(db):

@@ -1,3 +1,5 @@
+import contextlib
+
 from sanic import Sanic, response
 
 from fpx.model import Client
@@ -17,12 +19,13 @@ def authentication(request):
         return response.json(
             {
                 "errors": {
-                    "access": "Only clients authorized to use this endpoint"
-                }
+                    "access": "Only clients authorized to use this endpoint",
+                },
             },
             401,
         )
     request.ctx.client = client
+    return None
 
 
 def db_session(request):
@@ -30,11 +33,9 @@ def db_session(request):
 
 
 def db_session_close(request, response):
-    try:
+    # DB session is initialized in non-existing routes
+    with contextlib.suppress(AttributeError):
         request.ctx.db.close()
-    except AttributeError:
-        # DB session is not set. Probably it's non-existing route
-        pass
 
 
 def add_middlewares(app: Sanic):

@@ -1,48 +1,132 @@
 [tool.black]
-line-length = 79
-preview = true
+# line-length = 88
+# preview = true
 
-[tool.mypy]
-plugins = "sqlmypy"
-files = "ckan"
-exclude = "ckan/(pastertemplates|tests|migration)"
+[tool.ruff]
+target-version = "py38"
+select = [
+       "B",  # likely bugs and design problems
+       "BLE",  # do not catch blind exception
+       "C40",  # better list/set/dict comprehensions
+       "C90",  # check McCabe complexity
+       "COM",  # trailing commas
+       "E",  # pycodestyle error
+       "W",  # pycodestyle warning
+       "F",  # pyflakes
+       "G",  # format strings for logging statements
+       "N",  # naming conventions
+       "PL",  # pylint
+       "PT",  # pytest style
+       "PIE",  # misc lints
+       "Q",  # preferred quoting style
+       "RET",  # improvements for return statements
+       "RSE",  # improvements for rise statements
+       "S",  # security testing
+       "SIM",  # simplify code
+       "T10",  # debugging statements
+       "T20",  # print statements
+       "TID",  # tidier imports
+       "TRY",  # better exceptions
+       "UP",  # upgrade syntax for newer versions of the language
+]
+ignore = [
+       "E712", # comparison to bool: violated by SQLAlchemy filters
+       "PT004", # fixture does not return anything, add leading underscore: violated by clean_db
+       "PLR0911", # Too many return statements
+       "PLR0913", # Too many arguments to function call
 
-[tool.towncrier]
-filename = "CHANGELOG.rst"
-directory = "changes"
-package = "fpx"
-package_dir = "."
-issue_format = "{issue}"
-title_format = "{version} ({project_date})"
+       "PLC1901", # simplify comparison to empty string: violated by SQLAlchemy filters
+]
 
-[[tool.towncrier.type]]
-directory = "migration"
-name = "Migration guidelines"
-showcontent = true
+[tool.ruff.per-file-ignores]
+"fpx/route/ticket.py" = [
+                      "C901",  # complex with-statement
+]
+"fpx/config.py" = [
+                      "S104",  # 0.0.0.0 binding
+]
 
-[[tool.towncrier.type]]
-directory = "feature"
-name = "New features"
-showcontent = true
+"fpx/tests/*" = [
+                         "S",  # security testing
+                         "PLR2004" # magic value used in comparison
+]
 
+[tool.isort]
+known_self = "fpx"
+sections = "FUTURE,STDLIB,FIRSTPARTY,THIRDPARTY,SELF,LOCALFOLDER"
+profile = "black"
 
-[[tool.towncrier.type]]
-directory = "misc"
-name = "Minor improvements"
-showcontent = true
+[tool.pytest.ini_options]
 
-[[tool.towncrier.type]]
-directory = "bug"
-name = "Fixes"
-showcontent = true
+[tool.pyright]
+pythonVersion = "3.8"
+include = ["fpx"]
+exclude = [
+    "**/tests",
+    "**/migrations",
+]
+strict = []
 
+strictParameterNoneValue = true
 
-[[tool.towncrier.type]]
-directory = "deprectation"
-name = "Deprecations"
-showcontent = true
-
-[[tool.towncrier.type]]
-directory = "removal"
-name = "Removed functionality"
-showcontent = true
+# Check the meaning of rules here
+# https://github.com/microsoft/pyright/blob/main/docs/configuration.md
+reportFunctionMemberAccess = true # non-standard member accesses for functions
+reportMissingImports = true
+reportMissingModuleSource = true
+reportMissingTypeStubs = false
+reportImportCycles = true
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+reportOptionalSubscript = true
+reportOptionalMemberAccess = true
+reportOptionalCall = true
+reportOptionalIterable = true
+reportOptionalContextManager = true
+reportOptionalOperand = true
+reportTypedDictNotRequiredAccess = false # Context won't work with this rule
+reportConstantRedefinition = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportOverlappingOverload = true
+reportUntypedFunctionDecorator = false
+reportUnknownParameterType = true
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownMemberType = false
+reportMissingTypeArgument = true
+reportInvalidTypeVarUse = true
+reportCallInDefaultInitializer = true
+reportUnknownVariableType = true
+reportUntypedBaseClass = true
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportAssertAlwaysTrue = true
+reportSelfClsParameterName = true
+reportUnusedCallResult = false # allow function calls for side-effect only
+useLibraryCodeForTypes = true
+reportGeneralTypeIssues = true
+reportPropertyTypeMismatch = true
+reportWildcardImportFromLibrary = true
+reportUntypedClassDecorator = false
+reportUntypedNamedTuple = true
+reportPrivateUsage = true
+reportPrivateImportUsage = true
+reportInconsistentConstructor = true
+reportMissingSuperCall = false
+reportUninitializedInstanceVariable = true
+reportInvalidStringEscapeSequence = true
+reportMissingParameterType = true
+reportImplicitStringConcatenation = false
+reportUndefinedVariable = true
+reportUnboundVariable = true
+reportInvalidStubStatement = true
+reportIncompleteStub = true
+reportUnsupportedDunderAll = true
+reportUnusedCoroutine = true
+reportUnnecessaryTypeIgnoreComment = true
+reportMatchNotExhaustive = true

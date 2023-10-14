@@ -2,15 +2,8 @@ from __future__ import annotations
 
 import base64
 import json
-from threading import main_thread
 
-from marshmallow import (
-    Schema,
-    ValidationError,
-    fields,
-    validate,
-    validates_schema,
-)
+from marshmallow import Schema, ValidationError, fields, validate, validates_schema
 
 
 class Base64Json(fields.Field):
@@ -75,11 +68,14 @@ class TicketIndex(Schema):
 
 class TicketGenerate(Schema):
     type = fields.Str(
-        required=True, validate=validate.OneOf(["zip", "stream"])
+        required=True,
+        validate=validate.OneOf(["zip", "stream"]),
     )
     items = Base64Json(required=True, metadata={"fpx_expect": list})
     options = Base64Json(
-        required=False, load_default=dict, metadata={"fpx_expect": dict}
+        required=False,
+        load_default=dict,
+        metadata={"fpx_expect": dict},
     )
 
     @validates_schema
@@ -88,7 +84,7 @@ class TicketGenerate(Schema):
             raise ValidationError(
                 {
                     "type": [
-                        "Ticket with the type `stream` allows only one item"
-                    ]
-                }
+                        "Ticket with the type `stream` allows only one item",
+                    ],
+                },
             )

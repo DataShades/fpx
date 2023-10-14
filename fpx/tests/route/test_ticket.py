@@ -21,7 +21,7 @@ class TestIndex:
             "page": 1,
             "count": 1,
             "tickets": [
-                {"created": ticket.created_at.isoformat(), "type": ticket.type}
+                {"created": ticket.created_at.isoformat(), "type": ticket.type},
             ],
         }
 
@@ -51,7 +51,8 @@ class TestGenerate:
 
     def test_missing(self, rc, url_for, client):
         _, resp = rc.post(
-            url_for("ticket.generate"), headers={"authorize": client.id}
+            url_for("ticket.generate"),
+            headers={"authorize": client.id},
         )
         assert resp.status == 422
         assert set(resp.json["errors"]["json"].keys()) == {"type", "items"}
@@ -93,7 +94,7 @@ class TestGenerate:
         payload = {
             "type": "zip",
             "items": base64.encodebytes(b'["http://google.com"]').decode(
-                "utf8"
+                "utf8",
             ),
         }
         _, resp = rc.post(
@@ -103,9 +104,7 @@ class TestGenerate:
         )
         assert resp.status == 200
 
-        ticket: m.Ticket = (
-            db.query(m.Ticket).filter_by(id=resp.json["id"]).one()
-        )
+        ticket: m.Ticket = db.query(m.Ticket).filter_by(id=resp.json["id"]).one()
         assert ticket.items == ["http://google.com"]
         assert ticket.type == payload["type"]
 
@@ -150,13 +149,12 @@ class TestGenerate:
         )
         assert resp.status == 200
 
-        ticket: m.Ticket = (
-            db.query(m.Ticket).filter_by(id=resp.json["id"]).one()
-        )
+        ticket: m.Ticket = db.query(m.Ticket).filter_by(id=resp.json["id"]).one()
         assert ticket.items == payload["items"]
         assert ticket.type == payload["type"]
 
 
+@pytest.mark.usefixtures("all_transports")
 class TestDownload:
     def test_non_existing(self, rc, url_for):
         _, resp = rc.get(url_for("ticket.download", id="not-real"))
@@ -170,7 +168,7 @@ class TestDownload:
     def test_download(self, num, rc, url_for, ticket_factory, faker, rmock):
         urls = [faker.uri() for _ in range(num)]
         for url in urls:
-            rmock.get(url, body=f"hello world, {url}")
+            rmock(url=url, body=f"hello world, {url}")
 
         ticket = ticket_factory(content=json.dumps(urls), is_available=True)
         _, resp = rc.get(url_for("ticket.download", id=ticket.id))
@@ -181,29 +179,33 @@ class TestDownload:
         assert len(z.filelist) == len(urls)
         for url in urls:
             name = os.path.basename(url.rstrip("/"))
-            assert z.read(name) == f"hello world, {url}".encode("utf8")
+            assert z.read(name) == f"hello world, {url}".encode()
 
     def test_download_stream(self, rc, url_for, ticket_factory, faker, rmock):
         url = faker.uri()
-        rmock.get(url, body=f"hello world, {url}")
-        rmock.get(url, body=f"hello world, {url}")
+        rmock(url, body=f"hello world, {url}")
+        rmock(url, body=f"hello world, {url}")
 
         ticket = ticket_factory(
-            type="stream", content=json.dumps([url]), is_available=True
+            type="stream",
+            content=json.dumps([url]),
+            is_available=True,
         )
         _, resp = rc.get(url_for("ticket.download", id=ticket.id))
 
         assert resp.status == 200
-        assert resp.content == f"hello world, {url}".encode("utf8")
+        assert resp.content == f"hello world, {url}".encode()
 
     def test_download_huge_stream(self, rc, url_for, ticket_factory, faker, rmock):
         size = 1024 * 1024 * 10
         url = faker.uri()
-        rmock.get(url, body="0" * size)
-        rmock.get(url, body="0" * size)
+        rmock(url, body="0" * size)
+        rmock(url, body="0" * size)
 
         ticket = ticket_factory(
-            type="stream", content=json.dumps([url]), is_available=True
+            type="stream",
+            content=json.dumps([url]),
+            is_available=True,
         )
         _, resp = rc.get(url_for("ticket.download", id=ticket.id))
 

@@ -1,5 +1,5 @@
-import pytest
 import jwt
+import pytest
 
 
 def test_no_client(rc, url_for):
@@ -20,22 +20,27 @@ def test_invalid_jwt(rc, url_for, client):
 
 def test_valid_jwt_without_url(rc, url_for, client):
     encoded = jwt.encode(
-        {"hello": "world"}, client.id, algorithm=rc.app.config.JWT_ALGORITHM
+        {"hello": "world"},
+        client.id,
+        algorithm=rc.app.config.JWT_ALGORITHM,
     )
     _, resp = rc.get(url_for("stream.url", url=encoded, client=client.name))
     assert resp.status == 422
 
 
+@pytest.mark.usefixtures("all_transports")
 def test_valid_jwt(rc, url_for, client, rmock, faker):
     url = faker.uri()
     body = faker.binary()
     content_type = "application/pdf"
 
-    rmock.get(url, body=body, headers={"content-type": content_type})
-    rmock.get(url, body=body, headers={"content-type": content_type})
+    rmock(url, body=body, headers={"content-type": content_type})
+    rmock(url, body=body, headers={"content-type": content_type})
 
     encoded = jwt.encode(
-        {"url": url}, client.id, algorithm=rc.app.config.JWT_ALGORITHM
+        {"url": url},
+        client.id,
+        algorithm=rc.app.config.JWT_ALGORITHM,
     )
     _, resp = rc.get(url_for("stream.url", url=encoded, client=client.name))
 

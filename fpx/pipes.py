@@ -1,23 +1,22 @@
 from __future__ import annotations
+
 import abc
+import logging
 import os
 import time
-import logging
-from typing_extensions import Self
-
-from zipfile import ZipFile, ZipInfo
-from typing import AsyncIterable, cast
 from io import RawIOBase
+from typing import AsyncIterable, cast
+from zipfile import ZipFile, ZipInfo
 
 from sanic import request
+from typing_extensions import Self
 
 from fpx import exception
 from fpx.model import Ticket
 
-from . import utils
+from . import transport
 
 log = logging.getLogger(__name__)
-CHUNK_SIZE = 1024 * 256
 
 
 class _Stream(RawIOBase):
@@ -30,7 +29,8 @@ class _Stream(RawIOBase):
 
     def write(self, b):
         if self.closed:
-            raise ValueError("Stream was closed!")
+            msg = "Stream was closed!"
+            raise ValueError(msg)
         self._buffer += b
         return len(b)
 
@@ -51,26 +51,27 @@ class Pipe(abc.ABC):
     @classmethod
     def choose(cls, ticket: Ticket, request: request.Request):
         if ticket.type == "zip":
-            pipe = ZipPipe(ticket)
+            pipe = ZipPipe(ticket, request)
         elif ticket.type == "stream":
             if request.app.config.FPX_PIPE_SILLY_STREAM:
-                pipe = SillyStreamPipe(ticket)
+                pipe = SillyStreamPipe(ticket, request)
             else:
-                pipe = StreamPipe(ticket)
+                pipe = StreamPipe(ticket, request)
         else:
             raise exception.RequestError(
-                {"type": f"Unsupported ticket type: {ticket.type}"}
+                {"type": f"Unsupported ticket type: {ticket.type}"},
             )
         return pipe
 
-    def __init__(self, ticket: Ticket):
+    def __init__(self, ticket: Ticket, request: request.Request):
         self.ticket = ticket
+        self.request = request
 
     async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        pass
+        return
 
     def content_type(self):
         return self._content_type
@@ -80,7 +81,7 @@ class Pipe(abc.ABC):
 
     @abc.abstractmethod
     async def chunks(self) -> AsyncIterable[bytes]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ZipPipe(Pipe):
@@ -100,14 +101,15 @@ class ZipPipe(Pipe):
             stream,
             mode="w",
         ) as zf:
-            async for path, name, content, _resp in utils.stream_downloaded_files(
-                self.ticket.items
+            tp = transport.choose(self.request)
+            async for path, name, content, _resp in tp.stream(
+                self.ticket.items,
             ):
                 z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
                 with zf.open(z_info, mode="w", force_zip64=True) as dest:
                     try:
                         total = 0
-                        async for chunk in content.iter_chunked(CHUNK_SIZE):
+                        async for chunk in content:
                             dest.write(chunk)
                             total += len(chunk)
                             log.debug(
@@ -117,38 +119,35 @@ class ZipPipe(Pipe):
                             )
                             yield stream.get()
                     except TimeoutError:
-                        log.exception(f"TimeoutError while writing {z_info}")
+                        log.exception("TimeoutError while writing %s", z_info)
             zf.comment = b"Written by FPX"
         yield stream.get()
 
 
 class SillyStreamPipe(Pipe):
-    def __init__(self, ticket: Ticket):
-        super().__init__(ticket)
+    def __init__(self, ticket: Ticket, request: request.Request):
+        super().__init__(ticket, request)
         self._content_type = None
         self._filename = None
 
     async def __aenter__(self):
-        async for _path, name, _content, resp in utils.stream_downloaded_files(
-            self.ticket.items
-        ):
+        tp = transport.choose(self.request)
+        async for _path, name, _content, resp in tp.stream(self.ticket.items):
             self._filename = name
-            self._content_type = resp.content_type
+            self._content_type = resp.headers.get("content-type")
             break
         return self
 
     async def chunks(self) -> AsyncIterable[bytes]:
-        async for path, name, content, resp in utils.stream_downloaded_files(
-            self.ticket.items
-        ):
-
-            async for chunk in content.iter_chunked(CHUNK_SIZE):
+        tp = transport.choose(self.request)
+        async for _path, _name, content, _resp in tp.stream(self.ticket.items):
+            async for chunk in content:
                 yield chunk
 
 
 class StreamPipe(Pipe):
-    def __init__(self, ticket: Ticket):
-        super().__init__(ticket)
+    def __init__(self, ticket: Ticket, request: request.Request):
+        super().__init__(ticket, request)
         self._content_type = None
         self._filename = None
 
@@ -166,17 +165,15 @@ class StreamPipe(Pipe):
             pass
 
     async def chunks(self) -> AsyncIterable[bytes]:
-        assert self._content
         async for chunk in self._content:
             yield cast(bytes, chunk)
 
     async def _crawl_file(self):
-        async for path, name, content, resp in utils.stream_downloaded_files(
-            self.ticket.items
-        ):
+        tp = transport.choose(self.request)
+        async for _path, name, content, resp in tp.stream(self.ticket.items):
 
-            async def crawler():
-                async for chunk in content.iter_chunked(CHUNK_SIZE):
+            async def crawler(content=content):
+                async for chunk in content:
                     yield chunk
 
-            yield name, resp.content_type, crawler
+            yield name, resp.headers.get("content-type"), crawler

@@ -6,11 +6,11 @@ class FpxError(Exception):
         self._details = details
 
 
-class NotFound(FpxError):
+class NotFoundError(FpxError):
     _status = 404
 
 
-class NotAuthorized(FpxError):
+class NotAuthorizedError(FpxError):
     _status = 403
 
 
@@ -20,3 +20,11 @@ class JwtError(FpxError):
 
 class RequestError(FpxError):
     _status = 400
+
+
+class ConfigError(FpxError):
+    pass
+
+
+class TransportError(FpxError):
+    pass

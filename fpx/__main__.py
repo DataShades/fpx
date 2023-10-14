@@ -1,3 +1,3 @@
-from fpx.app import run_app, make_app
+from fpx.app import make_app, run_app
 
 run_app(make_app())

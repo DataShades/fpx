@@ -1,26 +1,61 @@
 import factory
 import pytest
-from sanic import Sanic
 from aioresponses import aioresponses
 from pytest_factoryboy import register
 
 # from sanic_testing import TestManager
 from sanic_testing.reusable import ReusableClient
 
+from fpx import model as m
 from fpx.app import make_app
 from fpx.cli.db import _up
 
-from .. import model as m
 from . import settings
 
 
-@pytest.fixture
-def rmock():
-    with aioresponses() as r:
-        yield r
+@pytest.fixture()
+def non_mocked_hosts() -> list:
+    return ["localhost", "127.0.0.1"]
 
 
-@pytest.fixture
+@pytest.fixture()
+def rmock(transport_name, httpx_mock):
+    """Mock async response."""
+    if transport_name == "aiohttp":
+        with aioresponses() as r:
+
+            def mock(url, body="", headers=None):
+                r.add(url=url, body=body, headers=headers)
+
+            yield mock
+
+    elif transport_name == "httpx":
+
+        def mock(url, body="", headers=None):
+            httpx_mock.add_response(url=url, content=body, headers=headers)
+
+        yield mock
+
+    else:
+        msg = f"Unsupported transport {transport_name}"
+        raise AssertionError(msg)
+
+
+@pytest.fixture(params=["aiohttp", "httpx"])
+def transport_name(request):
+    return request.param
+
+
+@pytest.fixture()
+def all_transports(monkeypatch, transport_name):
+    """Run tests with all available transports.
+
+    Apply this fixture before `app`/`reusable_client`
+    """
+    monkeypatch.setenv("FPX_FPX_TRANSPORT", transport_name)
+
+
+@pytest.fixture()
 def app(monkeypatch, tmpdir):
     """Ready-to-use FPX application"""
     monkeypatch.setenv("FPX_CONFIG", settings.__file__)
@@ -28,22 +63,22 @@ def app(monkeypatch, tmpdir):
     application = make_app()
 
     _up(application)
-    yield application
+    return application
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_client(app):
     """Test client that creates a new application for each request."""
     return app.test_client
 
 
-@pytest.fixture
+@pytest.fixture()
 def url_for(app):
     """URL generator."""
     return app.url_for
 
 
-@pytest.fixture
+@pytest.fixture()
 def reusable_client(app):
     """Test client that reuse application during the test."""
 
@@ -52,13 +87,13 @@ def reusable_client(app):
         yield client
 
 
-@pytest.fixture
+@pytest.fixture()
 def rc(reusable_client):
     """Shorthand for `reusable_cleint`"""
     return reusable_client
 
 
-@pytest.fixture
+@pytest.fixture()
 def db(app):
     """Active DB session."""
     return app.ctx.db_session()

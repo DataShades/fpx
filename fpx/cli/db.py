@@ -42,7 +42,7 @@ def current(app):
 
 def _alembic_config(config):
     alembic = Config(
-        os.path.join(os.path.dirname(fpx.__file__), "alembic.ini")
+        os.path.join(os.path.dirname(fpx.__file__), "alembic.ini"),
     )
     alembic.set_main_option("sqlalchemy.url", config.DB_URL)
     return alembic

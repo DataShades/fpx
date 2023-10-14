@@ -27,7 +27,7 @@ def drop(app: Sanic, name: str):
     sess = app.ctx.db_session()
     sess.query(Client).filter_by(name=name).delete()
     sess.commit()
-    click.secho(f"Client removed", fg="green")
+    click.secho("Client removed", fg="green")
 
 
 @client.command()
@@ -43,7 +43,8 @@ def regenerate(app: Sanic, name: str):
     sess.add(new_client)
     sess.commit()
     click.secho(
-        f"Client updated: {new_client.name} - {new_client.id}", fg="green"
+        f"Client updated: {new_client.name} - {new_client.id}",
+        fg="green",
     )
 
 

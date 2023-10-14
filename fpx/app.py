@@ -1,18 +1,18 @@
 from sanic import Sanic, response
 from webargs_sanic.sanicparser import HandleValidationError
 
+from . import exception
 from .config import FpxConfig
 from .context import Context
 from .middleware import add_middlewares
 from .route import add_routes
-from . import exception
 
 
 async def handle_validation_error(request, err):
     return response.json({"errors": err.exc.messages}, status=422)
 
 
-async def handle_fpx_error(request, err: exception.NotFound):
+async def handle_fpx_error(request, err: exception.NotFoundError):
     return response.json({"errors": err._details}, status=err._status)
 
 
