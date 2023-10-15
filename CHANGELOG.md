@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.2](https://github.com/DataShades/fpx/releases/tag/v0.5.2) - 2023-10-15
+
+<small>[Compare with v0.5.1](https://github.com/DataShades/fpx/compare/v0.5.1...v0.5.2)</small>
+
+### Bug Fixes
+
+- headers are missing from dict-items ([b10442f](https://github.com/DataShades/fpx/commit/b10442f553750469aeca4fecf5391c6976225bfc) by Sergey Motornyuk).
+
 ## [v0.5.1](https://github.com/DataShades/fpx/releases/tag/v0.5.1) - 2023-10-15
 
 <small>[Compare with v0.4.8](https://github.com/DataShades/fpx/compare/v0.4.8...v0.5.1)</small>
@@ -17,7 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Bug Fixes
 
-- ticket options has unsupported type ([d873f10](https://github.com/DataShades/fpx/commit/d873f1005a4dfb55000102b543567e14c447631b) by Sergey Motornyuk).
+- ticket options has unsupported type ([e2e832a](https://github.com/DataShades/fpx/commit/e2e832ab9a42bb6d124b8be4180128074df0f297) by Sergey Motornyuk).
 
 ## [v0.4.8](https://github.com/DataShades/fpx/releases/tag/v0.4.8) - 2023-05-08
 
