@@ -31,12 +31,16 @@ class ItemDetails:
     def from_dict(cls, item):
         url = item["url"]
 
-        return cls(
+        details = cls(
             url,
             item.get("name") or _name_from_url(url),
-            item.get("path", dataclasses.MISSING),
-            item.get("headers", dataclasses.MISSING),
         )
+
+        if path := item.get("path"):
+            details.path = path
+
+        if headers := item.get("headers"):
+            details.headers = headers
 
     @classmethod
     def from_str(cls, url):
