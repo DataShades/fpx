@@ -42,6 +42,8 @@ class ItemDetails:
         if headers := item.get("headers"):
             details.headers = headers
 
+        return details
+
     @classmethod
     def from_str(cls, url):
         return cls(
