@@ -52,7 +52,7 @@ class Ticket(Base):
     )
     type: Mapped[str] = mapped_column(nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    options: Mapped[dict[str, Any]] = mapped_column(nullable=False, default=dict)
+    options: Mapped[Dict[str, Any]] = mapped_column(nullable=False, default=dict)
     is_available: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
 

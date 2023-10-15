@@ -39,6 +39,10 @@ ignore = [
 ]
 
 [tool.ruff.per-file-ignores]
+"fpx/model.py" = [
+               "UP006",  # allow Dict
+]
+
 "fpx/route/ticket.py" = [
                       "C901",  # complex with-statement
 ]
