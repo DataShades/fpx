@@ -5,93 +5,152 @@ file. Typical usecase is downloading multiple files as archive using single
 link. Internally FPX fetches content from the specified set of URLs and streams
 zip-compressed stream to the end users.
 
-
-# Requirements
-
-* Python v3.8 or newer
-* DB driver. If you are using SQLite, no extra modules required. For other
-  providers, install corresponding SQLAlchemy adapter. For example, if you are
-  using PostgreSQL, install `psycopg2`:
-  ```sh
-  pip install psycopg2
-  ```
-
-  FPX has a set of predefined lists of dependencies for providers that were
-  tested on development stage. You can just install all the required
-  dependencies using package extra, when installing FPX itself:
-  ```sh
-  pip install 'fpx[postgresql]'
-  ```
-
-  Supported options are:
-
-  * `postgresql`
-
-
 # Installation
 
-1. Install `fpx` package.
+1. Install `fpx` package
    ```sh
    pip install fpx
+   ```
+1. Initialize DB
+   ```sh
+   fpx db up
+   ```
+1. Start FPX server
+   ```sh
+   fpx server run
    ```
 
 # Usage
 
+## Authentication
 
-# Complete Installation Guide (AmazonLinux)
+Majority of FPX endpoints are available only via *client's secret*. It can be
+generated via CLI command(replace `<CLIENT_NAME>` with an arbitrary combination
+of letters, digits and underscores):
 
-1. Install Python 3.8 or newer using `pyenv`:
+```sh
+fpx client add <CLIENT_NAME>
+```
+
+And secret will be shown in the output of the command:
+
+```sh
+Client created: <CLIENT_NAME> - <SECRET>
+```
+
+Pass the secret via `Authorization` header with each request to identify
+yourself as a client.
+
+## Downloads
+
+Downloading a file via FPX usually consists of two steps:
+
+* Provide information about downloaded URLs and receive IDs of the *download ticket*
+* Use the ticket's ID to download all URLs packed into a single ZIP archive
+
+First step can be completed via cURL:
+
+```sh
+curl -X POST http://localhost:8080/ticket/generate \
+    -H "Authorization: <CLIENT_SECRET>" \
+    -d '{"items":["https://google.com", "https://google.com/search"]}'
+```
+
+Here we are making a POST request to `/ticket/generate` endpoint of FPX
+service. It's requires client's secret, which is specified by `Authorization`
+header. This endpoint works only with JSON requests, that's why we need
+`Content-type`. Finally, body of the request must contain a JSON with an
+`items` field: the list of all URLs we are going to download.
+
+Response will be the following:
+```sh
+{"created":"2023-10-15T00:00:51.054523","type":"zip","id":"ca03e214-910d-419f-ad60-4b6fb8bdd10c"}
+```
+
+You need only `id` field from it. Use it to make a download URL:
+`/ticket/<ID>/download`. For the example above we receive this URL:
+`http://localhost:8080/ticket/ca03e214-910d-419f-ad60-4b6fb8bdd10c/download`.
+
+Open it in web browser or use `wget`/`curl` to download file via CLI:
+
+```sh
+curl http://localhost:8080/ticket/ca03e214-910d-419f-ad60-4b6fb8bdd10c/download -o collection.zip
+```
+
+# Configuration
+
+FPX works without explicit configuration, but default values are not suitable
+for production environments. Config options can be changes via config file and
+environment variables.
+
+## Config file
+
+FPX config file is a python script. It's read by FPX and all global variables
+from it are used as config options. For example, the following file will add
+`A` and `B` options to FPX application:
+
+```python
+A = 1
+B = ["hello", "world"]
+```
+
+Path to this file must be specified via `FPX_CONFIG` environment variable:
+
+```
+export FPX_CONFIG=/etc/fpx/config/fpx.py
+fpx server run
+```
+
+## Environment variables
+
+In addition to config file, FPX reads all environment variables with `FPX_*`
+name, strips `FPX_` prefix and use result as a config option. I.e:
+* `FPX_DB_URL` envvar turns into `DB_URL` config option
+* `FPX_FPX_TRANSPORT` envvar turns into `FPX_TRANSPORT` config option.
+
+Pay attention to config options with the name starting with `FPX_`. Because
+`FPX_` prefix is removed from envvars, you have to repeat it twice, like in
+`FPX_FPX_TRANSPORT` above.
+
+## Config options
+
+FPX makes use of the following config options
+
+| Name            | Description                                                                        | Default                 |
+|-----------------|------------------------------------------------------------------------------------|-------------------------|
+| `DEBUG`         | Run application in debug mode. Mainly used for development                         | false                   |
+| `HOST`          | Bind application to the specified addres                                           | 0.0.0.0                 |
+| `PORT`          | Run application on the specified port                                              | 8000                    |
+| `DB_URL`        | DB URL used for SQLAlchemy engine                                                  | `sqlite:////tmp/fpx.db` |
+| `FPX_TRANSPORT` | Underlying library for HTTP requests. `aiohttp` and `htmx` supported at the moment | `aiohttp`               |
+
+# Complete Installation Guide
+
+1. Install FPX:
    ```sh
-   # install build dependencies
-   sudo yum install -y openssl-devel readline-devel zlib-devel bzip2-devel libffi-devel
-
-   # install `pyenv`
-   git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-   # this require `chmod +x $HOME` if you are going to use different user for running services with installed python executable
-   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bash_profile
-   echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bash_profile
-   echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init -)"\nfi' >> ~/.bash_profile
-
-   # install python
-   pyenv install 3.8.2
+   pip install fpx
    ```
-
-1.  Create virtual environment for FPX and install it:
-    ```sh
-    pyenv shell 3.8.2
-    cd ~/.virtualenvs
-    python -m venv fpx
-    cd fpx
-    source bin/activate
-    pip install 'fpx~=0.4.0'
-    ```
 
 1. Create config file. It can be created anywhere, as long as it accessible by FPX service:
    ```sh
-    echo '
-    PORT = 12321
-    # DB is not used much, so SQLite can be used as long as you are going to use single instance of FPX service. If you planning to use multiple instances + load balancer, consider using PostgreSQL
-    DB_URL = "sqlite:////home/user/.virtualenvs/fpx/fpx.db"
-    # Any other options passed directly to the SQLAlchemy engine constructor(https://docs.sqlalchemy.org/en/13/core/engines.html#sqlalchemy.create_engine)
-    DB_EXTRAS = {
-      # "pool_size": 10,
-      # "max_overflow": 20,
-    }
-    ' > /etc/fpx/fpx.py
-    ```
+   echo '
+   PORT = 12321
+   DB_URL = "sqlite:////home/user/.virtualenvs/fpx/fpx.db"
+   ' > /etc/fpx/fpx.py
+   ```
 
 1. Initialize database and create access token for client:
    ```sh
-    export FPX_CONFIG=/etc/fpx/fpx.py
-    fpx db up
-    fpx client add my-first-fpx-client  # use any name, that match `[\w_-]`
-    ```
+   export FPX_CONFIG=/etc/fpx/fpx.py
+   fpx db up
+   fpx client add my-first-fpx-client  # use any name, that match `[\w_-]`
+   ```
 
    Make sure, db is accessible and writable by FPX service. This
-   manual suggests using `apache` user when configuring supervisor's
+   manual suggests using `www-data` user when configuring supervisor's
    process, so following command required:
    ```sh
-   chown apache:apache /home/user/.virtualenvs/fpx/fpx.db
+   chown www-data:www-data /home/user/.virtualenvs/fpx/fpx.db
    ```
 
 1. Test service:
@@ -106,46 +165,46 @@ zip-compressed stream to the end users.
    python>=3.6 (`pyenv shell 3.8.2`). And, if SQLite is used, fpx
    process has write access to db file:
    ```ini
-    [program:fpx-worker]
+   [program:fpx-worker]
 
-    ; Use the full paths to the virtualenv and your configuration file here.
-    command=/home/user/.virtualenv/fpx/bin/python -m fpx
+   ; Use the full paths to the virtualenv and your configuration file here.
+   command=/home/user/.virtualenv/fpx/bin/python -m fpx
 
-    environment=FPX_CONFIG=/etc/fpx/fpx.py
+   environment=FPX_CONFIG=/etc/fpx/fpx.py
 
-    ; User the worker runs as.
-    user=apache
+   ; User the worker runs as.
+   user=www-data
 
-    ; Start just a single worker. Increase this number if you have many or
-    ; particularly long running background jobs.
-    numprocs=1
-    process_name=%(program_name)s-%(process_num)02d
+   ; Start just a single worker. Increase this number if you have many or
+   ; particularly long running background jobs.
+   numprocs=1
+   process_name=%(program_name)s-%(process_num)02d
 
-    ; Log files.
-    stdout_logfile=/var/log/fpx-worker.log
-    stderr_logfile=/var/log/fpx-worker.log
+   ; Log files.
+   stdout_logfile=/var/log/fpx-worker.log
+   stderr_logfile=/var/log/fpx-worker.log
 
-    ; Make sure that the worker is started on system start and automatically
-    ; restarted if it crashes unexpectedly.
-    autostart=true
-    autorestart=true
+   ; Make sure that the worker is started on system start and automatically
+   ; restarted if it crashes unexpectedly.
+   autostart=true
+   autorestart=true
 
-    ; Number of seconds the process has to run before it is considered to have
-    ; started successfully.
-    startsecs=10
+   ; Number of seconds the process has to run before it is considered to have
+   ; started successfully.
+   startsecs=10
 
-    ; Need to wait for currently executing tasks to finish at shutdown.
-    ; Increase this if you have very long running tasks.
-    stopwaitsecs = 600
-    ```
+   ; Need to wait for currently executing tasks to finish at shutdown.
+   ; Increase this if you have very long running tasks.
+   stopwaitsecs = 600
+   ```
 
 1. FPX service must be available via public url. As written in
-   [documentation](https://sanic.readthedocs.io/en/latest/sanic/deploying.html#deploying),
+   [documentation](https://sanic.dev/en/guide/deployment/running.html#running-sanic),
    no additional layers required. But if you decide to use it with Nginx, the
    [following
-   link](https://sanic.readthedocs.io/en/latest/sanic/nginx.html#nginx-configuration)
-   may be useful. Note, if `FPX_NO_QUEUE` set to `False`, FPX is using
-   websockets (if it can somehow affect configuration).
+   link](https://sanic.dev/en/guide/deployment/nginx.html#proxied-sanic-app)
+   may be useful. Note, if `FPX_NO_QUEUE` config option is set to `False`, FPX
+   is using websockets (and it can affect configuration).
 
    Example of Nginx section for FPX:
    ```conf
@@ -166,7 +225,7 @@ zip-compressed stream to the end users.
    }
    ```
 
-   Example of apache configuration:
+   Example of httpd configuration:
    ```cond
    # mod_proxy
    # mod_proxy_http

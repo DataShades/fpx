@@ -7,7 +7,11 @@ from fpx.model import Client
 
 def authentication(request):
     client = None
-    id_ = request.headers.get("authorize")
+    id_ = (
+        request.headers.get("x-fpx-authorize")
+        or request.headers.get("authorization")
+        or request.headers.get("authorize")
+    )
     if id_:
         client = request.ctx.db.get(Client, id_)
 

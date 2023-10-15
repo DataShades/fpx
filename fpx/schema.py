@@ -68,8 +68,8 @@ class TicketIndex(Schema):
 
 class TicketGenerate(Schema):
     type = fields.Str(
-        required=True,
         validate=validate.OneOf(["zip", "stream"]),
+        load_default="zip",
     )
     items = Base64Json(required=True, metadata={"fpx_expect": list})
     options = Base64Json(
