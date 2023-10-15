@@ -1,12 +1,5 @@
-from sanic import Sanic
+from __future__ import annotations
 
-from fpx.app import loader
+from fpx.app import loader, run_app
 
-app = loader.load()
-app.prepare(
-    host=app.config.HOST,
-    port=app.config.PORT,
-    dev=app.config.DEBUG,
-)
-
-Sanic.serve(app, app_loader=loader)
+run_app(loader.load())

@@ -8,11 +8,11 @@ from io import RawIOBase
 from typing import AsyncIterable, cast
 from zipfile import ZipFile, ZipInfo
 
-from sanic import request
 from typing_extensions import Self
 
 from fpx import exception
 from fpx.model import Ticket
+from fpx.types import Request
 
 from . import transport
 
@@ -49,7 +49,7 @@ class Pipe(abc.ABC):
     _filename = "download"
 
     @classmethod
-    def choose(cls, ticket: Ticket, request: request.Request):
+    def choose(cls, ticket: Ticket, request: Request):
         if ticket.type == "zip":
             pipe = ZipPipe(ticket, request)
         elif ticket.type == "stream":
@@ -63,7 +63,7 @@ class Pipe(abc.ABC):
             )
         return pipe
 
-    def __init__(self, ticket: Ticket, request: request.Request):
+    def __init__(self, ticket: Ticket, request: Request):
         self.ticket = ticket
         self.request = request
 
@@ -125,7 +125,7 @@ class ZipPipe(Pipe):
 
 
 class SillyStreamPipe(Pipe):
-    def __init__(self, ticket: Ticket, request: request.Request):
+    def __init__(self, ticket: Ticket, request: Request):
         super().__init__(ticket, request)
         self._content_type = None
         self._filename = None
@@ -146,7 +146,7 @@ class SillyStreamPipe(Pipe):
 
 
 class StreamPipe(Pipe):
-    def __init__(self, ticket: Ticket, request: request.Request):
+    def __init__(self, ticket: Ticket, request: Request):
         super().__init__(ticket, request)
         self._content_type = None
         self._filename = None

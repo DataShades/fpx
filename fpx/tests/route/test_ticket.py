@@ -55,7 +55,7 @@ class TestGenerate:
             headers={"authorize": client.id},
         )
         assert resp.status == 422
-        assert set(resp.json["errors"]["json"].keys()) == {"type", "items"}
+        assert set(resp.json["errors"]["json"].keys()) == {"items"}
 
     def test_items_not_a_string_or_expected(self, rc, url_for, client):
         payload = {"type": "zip", "items": 123}

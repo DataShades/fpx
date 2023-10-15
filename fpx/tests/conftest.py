@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import factory
 import pytest
 from aioresponses import aioresponses
 from pytest_factoryboy import register
 from sanic_testing import TestManager
-
-# from sanic_testing import TestManager
 from sanic_testing.reusable import ReusableClient
 
 from fpx import model as m
@@ -20,30 +20,46 @@ def non_mocked_hosts() -> list:
 
 
 @pytest.fixture()
-def rmock(transport_name, httpx_mock):
-    """Mock async response."""
-    if transport_name == "aiohttp":
-        with aioresponses() as r:
-
-            def mock(url, body="", headers=None):
-                r.add(url=url, body=body, headers=headers)
-
-            yield mock
-
-    elif transport_name == "httpx":
+def rmock_aiohttp():
+    """Response factory for aiohttp."""
+    with aioresponses() as r:
 
         def mock(url, body="", headers=None):
-            httpx_mock.add_response(url=url, content=body, headers=headers)
+            r.add(url=url, body=body, headers=headers)
 
         yield mock
 
-    else:
-        msg = f"Unsupported transport {transport_name}"
-        raise AssertionError(msg)
+
+@pytest.fixture()
+def rmock_httpx(httpx_mock):
+    """Response factory for httpx."""
+
+    def mock(url, body="", headers=None):
+        httpx_mock.add_response(url=url, content=body, headers=headers)
+
+    return mock
+
+
+@pytest.fixture()
+def rmock(transport_name, rmock_httpx, rmock_aiohttp):
+    """Mock async response.
+
+    This fixture produce a different mock factory, depending on the value of
+    `transport_name` fixture.
+    """
+    if transport_name == "aiohttp":
+        return rmock_aiohttp
+
+    if transport_name == "httpx":
+        return rmock_httpx
+
+    msg = f"Unsupported transport {transport_name}"
+    raise AssertionError(msg)
 
 
 @pytest.fixture(params=["aiohttp", "httpx"])
 def transport_name(request):
+    """Run test once for each name of supported transport."""
     return request.param
 
 
@@ -119,6 +135,3 @@ class TicketFactory(factory.alchemy.SQLAlchemyModelFactory):
 
     type = "zip"
     content = '["http://example.com"]'
-    # options
-    # is_available
-    # created_at

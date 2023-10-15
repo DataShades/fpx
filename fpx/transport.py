@@ -9,7 +9,6 @@ from urllib.parse import unquote_plus, urlparse
 
 import aiohttp
 import httpx
-from aiohttp.client_exceptions import ClientError
 
 from .exception import ConfigError, TransportError
 
@@ -103,7 +102,7 @@ class Transport:
                 name = self.name_from_resp(resp, details.name) or details.name
                 yield details.path, name, self.content_iterator(resp), resp
 
-        except (TransportError, ClientError, httpx.HTTPError):
+        except (TransportError, aiohttp.ClientError, httpx.HTTPError):
             log.exception("Failed on %s", details.url)
 
     def name_from_resp(self, resp: Any, default_name: str) -> str | None:
@@ -161,7 +160,6 @@ class HttpxTransport(Transport):
             headers=headers,
             timeout=timeout,
         ) as resp:
-            await resp.aread()
             yield resp
 
     def content_iterator(self, resp: httpx.Response):

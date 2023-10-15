@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import logging
+from fpx.types import App
 
 from . import stream, ticket
 
-log = logging.getLogger(__name__)
 
-
-def add_routes(app):
+def add_routes(app: App):
     app.blueprint(stream.stream)
     app.blueprint(ticket.ticket)

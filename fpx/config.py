@@ -1,3 +1,5 @@
+"""Application config logic.
+"""
 from __future__ import annotations
 
 import logging
@@ -13,6 +15,7 @@ log = logging.getLogger(__name__)
 
 
 def _defaults() -> dict[str, Any]:
+    """Default values for all config options."""
     return {
         "DEBUG": False,
         "HOST": "0.0.0.0",
@@ -33,10 +36,17 @@ def _defaults() -> dict[str, Any]:
 
 
 class FpxConfig(Config):
+    """Configuration for Sanic app object."""
+
     def __init__(self):
         super().__init__()
+
         self.update_config(_defaults())
+
+        # load all FPX_-prefixed envvars. This if required to locate config
+        # file specified by FPX_CONFIG.
         self.load_environment_vars(prefix="FPX_")
+
         try:
             self.update_config("${FPX_CONFIG}")
         except LoadFileException:

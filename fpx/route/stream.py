@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import jwt
-from sanic import Blueprint, request
+from sanic import Blueprint
 from webargs_sanic.sanicparser import use_kwargs
 
 from fpx import exception, pipes, schema, utils
@@ -12,7 +12,7 @@ stream = Blueprint("stream", url_prefix="/stream")
 
 @stream.get("/url/<url>")
 @use_kwargs(schema.StreamUrl(), location="query")
-async def url(request: request.Request, url, client):
+async def url(request: pipes.Request, url, client):
     db = request.ctx.db
     client = request.ctx.db.query(Client).filter_by(name=client).one_or_none()
     if not client:

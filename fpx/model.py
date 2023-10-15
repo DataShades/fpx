@@ -4,22 +4,31 @@ import json
 import secrets
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, String, Text, orm
-
-Session = orm.scoped_session(
-    orm.sessionmaker(autocommit=False, autoflush=False),
+from sqlalchemy import JSON, Text
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    scoped_session,
+    sessionmaker,
 )
 
-registry = orm.registry()
-Base = registry.generate_base()
+Session = scoped_session(
+    sessionmaker(autocommit=False, autoflush=False),
+)
+
+
+class Base(DeclarativeBase):
+    type_annotation_map = {Dict[str, Any]: JSON}
 
 
 class Client(Base):
     __tablename__ = "clients"
-    id: str = Column(String, primary_key=True, default=secrets.token_urlsafe)
-    name: str = Column(String, unique=True, nullable=False)
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=secrets.token_urlsafe)
+    name: Mapped[str] = mapped_column(unique=True, nullable=False)
 
     def __init__(self, name):
         self.name = name
@@ -37,16 +46,15 @@ class Client(Base):
 
 class Ticket(Base):
     __tablename__ = "tickets"
-    id: str = Column(
-        String,
+    id: Mapped[str] = mapped_column(
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    type: str = Column(String, nullable=False)
-    content: str = Column(Text, nullable=False)
-    options: dict[str, Any] = Column(JSON, nullable=False, default=dict)
-    is_available: bool = Column(Boolean, default=False)
-    created_at: datetime = Column(DateTime, default=datetime.utcnow())
+    type: Mapped[str] = mapped_column(nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    options: Mapped[dict[str, Any]] = mapped_column(nullable=False, default=dict)
+    is_available: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
 
     @property
     def items(self):

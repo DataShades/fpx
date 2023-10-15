@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Any
 
-from sanic import Blueprint, request, response
+from sanic import Blueprint, response
 from sanic.exceptions import WebsocketClosed
 from sanic.server.websockets.impl import WebsocketImplProtocol
 from sqlalchemy.orm.query import Query
@@ -14,6 +14,7 @@ from webargs_sanic.sanicparser import use_kwargs
 from fpx import exception, schema, utils
 from fpx.model import Ticket
 from fpx.pipes import Pipe
+from fpx.types import Request
 
 log = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ ticket = Blueprint("ticket", url_prefix="/ticket")
 
 @ticket.get("/")
 @use_kwargs(schema.TicketIndex(), location="query")
-async def index(request: request.Request, page: int) -> response.HTTPResponse:
+async def index(request: Request, page: int) -> response.HTTPResponse:
     limit = 10
     base: Query[Ticket] = request.ctx.db.query(Ticket)
     q = base.limit(limit).offset(limit * page - limit)
@@ -38,7 +39,7 @@ async def index(request: request.Request, page: int) -> response.HTTPResponse:
 @ticket.route("/generate", methods=["POST"], ctx_requires_client=True)
 @use_kwargs(schema.TicketGenerate(), location="json")
 async def generate(
-    request: request.Request,
+    request: Request,
     type: str,
     items: Any,
     options: dict[str, Any],
@@ -54,7 +55,7 @@ async def generate(
 
 
 @ticket.route("/<id>/download")
-async def download(request: request.Request, id: str):
+async def download(request: Request, id: str):
     db = request.ctx.db
     ticket = db.get(Ticket, id)
 
@@ -85,7 +86,7 @@ async def download(request: request.Request, id: str):
 
 
 @ticket.websocket("/<id>/wait")
-async def wait(request: request.Request, ws: WebsocketImplProtocol, id: str):
+async def wait(request: Request, ws: WebsocketImplProtocol, id: str):
     db = request.ctx.db
     q = request.app.ctx.download_queue
     active = request.app.ctx.active_downloads
