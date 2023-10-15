@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.3](https://github.com/DataShades/fpx/releases/tag/v0.5.3) - 2023-10-15
+
+<small>[Compare with v0.5.2](https://github.com/DataShades/fpx/compare/v0.5.2...v0.5.3)</small>
+
+### Bug Fixes
+
+- missing details for dict-item ([14568df](https://github.com/DataShades/fpx/commit/14568df0880c2ae8e44812711456feecddb002f4) by Sergey Motornyuk).
+
 ## [v0.5.2](https://github.com/DataShades/fpx/releases/tag/v0.5.2) - 2023-10-15
 
 <small>[Compare with v0.5.1](https://github.com/DataShades/fpx/compare/v0.5.1...v0.5.2)</small>
