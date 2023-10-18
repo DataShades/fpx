@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from fpx.config import FpxConfig
     from fpx.context import Context
 
-App: TypeAlias = "Sanic[FpxConfig, Context]"
-Request: TypeAlias = "SanicRequest[App, Context]"
+App: TypeAlias = Sanic["FpxConfig", "Context"]
+Request: TypeAlias = SanicRequest["App", "Context"]
 Response: TypeAlias = HTTPResponse
 AlchemySession: TypeAlias = Session
