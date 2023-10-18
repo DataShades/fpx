@@ -8,10 +8,10 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 
+from sqlalchemy.orm import Session as AlchemySession
 from sqlalchemy.orm.scoping import ScopedSession
 
 from .model import Client, Session
-from .types import AlchemySession
 
 
 @dataclass
