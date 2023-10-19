@@ -119,11 +119,14 @@ class ZipPipe(Pipe):
                                 total // 1024 // 1024,
                             )
                             yield stream.get()
-                    except TimeoutError:
+                    except (TimeoutError, httpx.TimeoutException):
                         log.exception("TimeoutError while writing %s", z_info)
 
                     except httpx.ReadError:
                         log.exception("Read error from file %s", name)
+
+                    except Exception:
+                        log.exception("Unexpected error from file %s", name)
 
             zf.comment = b"Written by FPX"
         yield stream.get()
