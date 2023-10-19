@@ -4,13 +4,14 @@ import dataclasses
 import logging
 import os
 import re
-from typing import Any
+from typing import Any, AsyncIterable
 from urllib.parse import unquote_plus, urlparse
 
 import aiohttp
 import httpx
 
 from .exception import ConfigError, TransportError
+from .types import Request
 
 log = logging.getLogger(__name__)
 request_timeout = 24 * 60 * 60
@@ -28,7 +29,7 @@ class ItemDetails:
     headers: dict[str, Any] = dataclasses.field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, item):
+    def from_dict(cls, item: dict[str, Any]):
         url = item["url"]
 
         details = cls(
@@ -45,7 +46,7 @@ class ItemDetails:
         return details
 
     @classmethod
-    def from_str(cls, url):
+    def from_str(cls, url: str):
         return cls(
             url,
             _name_from_url(url),
@@ -60,8 +61,8 @@ class ItemDetails:
             log.exception("Cannot simplify name: %s", self.name)
 
 
-def choose(request):
-    name = request.app.config["FPX_TRANSPORT"]
+def choose(request: Request):
+    name: str = request.app.config["FPX_TRANSPORT"]
     if name == "aiohttp":
         return AioHttpTransport()
 
@@ -85,15 +86,23 @@ def _name_from_url(url: str) -> str:
 
 
 class Transport:
-    async def get(self, url: str, headers: dict[str, Any], timeout: int):
-        return
+    async def get(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        timeout: int,
+    ) -> AsyncIterable[Any]:
+        ...
 
     async def stream(self, items: list[Any]):
         for item in items:
             async for result in self.fetch_item(item):
                 yield result
 
-    async def fetch_item(self, item):
+    async def fetch_item(
+        self,
+        item: str | dict[str, Any],
+    ) -> AsyncIterable[tuple[str, str, AsyncIterable[Any], Any]]:
         if isinstance(item, dict):
             details = ItemDetails.from_dict(item)
         else:
@@ -129,7 +138,7 @@ class Transport:
             log.exception("Cannot simplify name: %s", name)
             return name
 
-    def content_iterator(self, resp: Any):
+    def content_iterator(self, resp: Any) -> AsyncIterable[bytes]:
         raise NotImplementedError
 
 

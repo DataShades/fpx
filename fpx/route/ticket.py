@@ -98,7 +98,7 @@ async def wait(request: Request, ws: WebsocketImplProtocol, id: str):
         offset = q.index(id) if id in q else len(q)
         return offset + len(active) - request.app.config.SIMULTANEOURS_DOWNLOADS_LIMIT
 
-    async def send_position(position):
+    async def send_position(position: int):
         await ws.send(
             json.dumps(
                 {"position": position, "available": ticket.is_available},
@@ -124,7 +124,7 @@ async def wait(request: Request, ws: WebsocketImplProtocol, id: str):
 
     @utils.on_download_started.connect
     @utils.on_download_completed.connect
-    async def download_listener(sender, **kwargs):
+    async def download_listener(sender: Any, **kwargs: Any):
         position = _position()
         if position < 0:
             ticket.is_available = True

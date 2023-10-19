@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from sanic.config import Config
 from sanic.exceptions import LoadFileException
@@ -37,6 +37,8 @@ def _defaults() -> dict[str, Any]:
 
 class FpxConfig(Config):
     """Configuration for Sanic app object."""
+
+    FPX_TRANSPORT: Literal["aiohttp", "httpx"]
 
     def __init__(self):
         super().__init__()

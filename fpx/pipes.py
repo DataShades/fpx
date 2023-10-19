@@ -8,6 +8,7 @@ from io import RawIOBase
 from typing import AsyncIterable, cast
 from zipfile import ZipFile, ZipInfo
 
+import httpx
 from typing_extensions import Self
 
 from fpx import exception
@@ -120,6 +121,10 @@ class ZipPipe(Pipe):
                             yield stream.get()
                     except TimeoutError:
                         log.exception("TimeoutError while writing %s", z_info)
+
+                    except httpx.ReadError:
+                        log.exception("Read error from file %s", name)
+
             zf.comment = b"Written by FPX"
         yield stream.get()
 
