@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.5](https://github.com/DataShades/fpx/releases/tag/v0.5.5) - 2023-10-19
+
+<small>[Compare with v0.5.3](https://github.com/DataShades/fpx/compare/v0.5.3...v0.5.5)</small>
+
+### Bug Fixes
+
+- download files after first broken file ([ef414c5](https://github.com/DataShades/fpx/commit/ef414c5a7f9b0221cfc19969f059d4b03b6e427c) by Sergey Motornyuk).
+- type error on python v3.9 ([6857719](https://github.com/DataShades/fpx/commit/6857719b17d4cf941028738d58f3701abdf945de) by Sergey Motornyuk).
+
 ## [v0.5.3](https://github.com/DataShades/fpx/releases/tag/v0.5.3) - 2023-10-15
 
 <small>[Compare with v0.5.2](https://github.com/DataShades/fpx/compare/v0.5.2...v0.5.3)</small>
