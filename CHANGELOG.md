@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.7](https://github.com/DataShades/fpx/releases/tag/v0.5.7) - 2023-11-13
+
+<small>[Compare with v0.5.6](https://github.com/DataShades/fpx/compare/v0.5.6...v0.5.7)</small>
+
+### Features
+
+- configure log level via FPX_LOG_LEVEL ([7e4f328](https://github.com/DataShades/fpx/commit/7e4f328bcc1d2cf114edc12b318fb4254439214d) by Sergey Motornyuk).
+
+## [v0.5.6](https://github.com/DataShades/fpx/releases/tag/v0.5.6) - 2023-10-19
+
+<small>[Compare with v0.5.5](https://github.com/DataShades/fpx/compare/v0.5.5...v0.5.6)</small>
+
 ## [v0.5.5](https://github.com/DataShades/fpx/releases/tag/v0.5.5) - 2023-10-19
 
 <small>[Compare with v0.5.3](https://github.com/DataShades/fpx/compare/v0.5.3...v0.5.5)</small>
