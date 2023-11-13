@@ -1,6 +1,8 @@
 """Generic logic for app initialization.
 """
+
 from sanic import Sanic
+from sanic.log import LOGGING_CONFIG_DEFAULTS
 from sanic.worker.loader import AppLoader
 
 from fpx.types import App
@@ -10,6 +12,20 @@ from .config import FpxConfig
 from .context import Context
 
 
+def make_log_config(config: FpxConfig):
+    log_config = dict(LOGGING_CONFIG_DEFAULTS)
+    log_config["loggers"] = dict(
+        log_config["loggers"],
+        fpx={
+            "level": config.FPX_LOG_LEVEL,
+            "handlers": ["console"],
+            "propagate": True,
+            "qualname": "fpx",
+        },
+    )
+    return log_config
+
+
 def make_app() -> Sanic[FpxConfig, Context]:
     """Initialize and setup Sanic application.
 
@@ -17,7 +33,9 @@ def make_app() -> Sanic[FpxConfig, Context]:
     for CLI.
 
     """
-    app = Sanic("FPX", ctx=Context(), config=FpxConfig())
+    config = FpxConfig()
+    log_config = make_log_config(config)
+    app = Sanic("FPX", ctx=Context(), config=config, log_config=log_config)
 
     middleware.add_middlewares(app)
     route.add_routes(app)

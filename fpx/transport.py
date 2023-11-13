@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 request_timeout = 24 * 60 * 60
 disposition_re = re.compile('filename="(.+)"')
 
-CHUNK_SIZE = 1024 * 256
+CHUNK_SIZE = 1024**2
 
 
 @dataclasses.dataclass
@@ -91,8 +91,8 @@ class Transport:
         url: str,
         headers: dict[str, Any],
         timeout: int,
-    ) -> AsyncIterable[Any]:
-        ...
+    ) -> AsyncIterable[tuple[Any, int, str]]:
+        raise NotImplementedError
 
     async def stream(self, items: list[Any]):
         for item in items:
@@ -109,11 +109,13 @@ class Transport:
             details = ItemDetails.from_str(item)
 
         try:
-            async for resp in self.get(
+            log.debug("Fetch a file from %s", details.url)
+            async for resp, status, reason in self.get(
                 details.url,
                 headers=details.headers,
                 timeout=request_timeout,
             ):
+                log.info("Got a %s(%s) response from %s", status, reason, details.url)
                 name = self.name_from_resp(resp, details.name) or details.name
                 yield details.path, name, self.content_iterator(resp), resp
 
@@ -127,6 +129,7 @@ class Transport:
             if match:
                 return match.group(1)
             return None
+
         return None
 
     def unquote_name(self, name: str) -> str:
@@ -149,13 +152,18 @@ class AioHttpTransport(Transport):
             async for item in super().stream(items):
                 yield item
 
-    async def get(self, url: str, headers: dict[str, Any], timeout: int):
+    async def get(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        timeout: int,
+    ) -> AsyncIterable[tuple[aiohttp.ClientResponse, int, str]]:
         async with self.session.get(
             url,
             headers=headers,
             timeout=aiohttp.ClientTimeout(total=timeout),
         ) as resp:
-            yield resp
+            yield resp, resp.status, resp.reason or ""
 
     def content_iterator(self, resp: aiohttp.ClientResponse):
         return resp.content.iter_chunked(CHUNK_SIZE)
@@ -168,14 +176,19 @@ class HttpxTransport(Transport):
             async for item in super().stream(items):
                 yield item
 
-    async def get(self, url: str, headers: dict[str, Any], timeout: int):
+    async def get(
+        self,
+        url: str,
+        headers: dict[str, Any],
+        timeout: int,
+    ) -> AsyncIterable[tuple[httpx.Response, int, str]]:
         async with self.session.stream(
             "GET",
             url,
             headers=headers,
             timeout=timeout,
         ) as resp:
-            yield resp
+            yield resp, resp.status_code, resp.reason_phrase
 
     def content_iterator(self, resp: httpx.Response):
         return resp.aiter_bytes(CHUNK_SIZE)

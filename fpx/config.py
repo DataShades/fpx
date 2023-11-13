@@ -29,6 +29,7 @@ def _defaults() -> dict[str, Any]:
         "SIMULTANEOURS_DOWNLOADS_LIMIT": 2,
         "FALLBACK_ERROR_FORMAT": "json",
         "JWT_ALGORITHM": "HS256",
+        "FPX_LOG_LEVEL": "INFO",
         "FPX_NO_QUEUE": True,
         "FPX_TRANSPORT": "aiohttp",
         "FPX_PIPE_SILLY_STREAM": True,

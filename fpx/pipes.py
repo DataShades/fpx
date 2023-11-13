@@ -106,7 +106,9 @@ class ZipPipe(Pipe):
             async for path, name, content, _resp in tp.stream(
                 self.ticket.items,
             ):
-                z_info = ZipInfo(os.path.join(path, name), time.gmtime()[:6])
+                entry = os.path.join(path, name)
+                log.debug("Add entry to ZIP archive: %s", entry)
+                z_info = ZipInfo(entry, time.gmtime()[:6])
                 with zf.open(z_info, mode="w", force_zip64=True) as dest:
                     try:
                         total = 0
@@ -114,19 +116,30 @@ class ZipPipe(Pipe):
                             dest.write(chunk)
                             total += len(chunk)
                             log.debug(
-                                "+Chunk %sKB / %sMB",
-                                total // 1024,
+                                "+Chunk. %sMB(%sKB) of %s are added to the archive",
                                 total // 1024 // 1024,
+                                total // 1024,
+                                name,
                             )
                             yield stream.get()
+
                     except (TimeoutError, httpx.TimeoutException):
-                        log.exception("TimeoutError while writing %s", z_info)
+                        log.exception(
+                            "TimeoutError while writing %s. Move to the next file",
+                            z_info,
+                        )
 
                     except httpx.ReadError:
-                        log.exception("Read error from file %s", name)
+                        log.exception(
+                            "Read error from file %s. Move to the next file",
+                            name,
+                        )
 
                     except Exception:
-                        log.exception("Unexpected error from file %s", name)
+                        log.exception(
+                            "Unexpected error from file %s. Move to the next file",
+                            name,
+                        )
 
             zf.comment = b"Written by FPX"
         yield stream.get()

@@ -75,7 +75,11 @@ async def download(request: Request, id: str):
         response.content_type = pipe.content_type()
         filename = pipe.filename()
         response.headers["content-disposition"] = f'attachment; filename="{filename}"'
-
+        log.info(
+            "Prepare for streaming %s using %s pipe",
+            filename,
+            type(pipe).__name__,
+        )
         with utils.ActiveDownload(request.app.ctx.active_downloads, id):
             db.delete(ticket)
             db.commit()
