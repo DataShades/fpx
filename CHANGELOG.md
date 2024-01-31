@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.5.8](https://github.com/DataShades/fpx/releases/tag/v0.5.8) - 2024-01-31
+
+<small>[Compare with v0.5.7](https://github.com/DataShades/fpx/compare/v0.5.7...v0.5.8)</small>
+
+### Bug Fixes
+
+- app crashes because "listener has no priority" ([a303a14](https://github.com/DataShades/fpx/commit/a303a14bb6fb6ef6634dd88bb9f559de7288ace6) by Sergey Motornyuk).
+
 ## [v0.5.7](https://github.com/DataShades/fpx/releases/tag/v0.5.7) - 2023-11-13
 
 <small>[Compare with v0.5.6](https://github.com/DataShades/fpx/compare/v0.5.6...v0.5.7)</small>
@@ -151,3 +159,4 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v0.0.3](https://github.com/DataShades/fpx/releases/tag/v0.0.3) - 2020-05-27
 
 <small>[Compare with first commit](https://github.com/DataShades/fpx/compare/e653dcba1c3fbbd9be38521627d770dab4904577...v0.0.3)</small>
+
