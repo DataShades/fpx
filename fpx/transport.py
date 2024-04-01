@@ -257,7 +257,6 @@ try:
                     stream = await resp.download_blob(offset)
                     async for chunk in stream.chunks():
                         offset += len(chunk)
-                        log.info("Downloaded %s bytes", offset)
                         yield chunk
 
                 except Exception:
