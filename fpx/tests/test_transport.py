@@ -12,11 +12,14 @@ class TestAioHttpTransport:
 
     @pytest.mark.asyncio()
     async def test_stream(self, faker, rmock):
-        url = faker.uri()
+        url: str = faker.uri()
         rmock(url=url, body=f"hello world, {url}")
 
-        tp = transport.AioHttpTransport()
-        async for _path, _name, content, _response in tp.stream([url]):
+        async with transport.AioHttpTransport(
+            transport.ItemDetails.from_str(url)
+        ) as tp:
+            assert tp is not None
+            _path, _name, content, _response = tp
             result = b""
             async for chunk in content:
                 result += chunk
@@ -31,11 +34,12 @@ class TestHttpxTransport:
 
     @pytest.mark.asyncio()
     async def test_stream(self, faker, rmock):
-        url = faker.uri()
+        url: str = faker.uri()
         rmock(url=url, body=f"hello world, {url}")
 
-        tp = transport.HttpxTransport()
-        async for _path, _name, content, _response in tp.stream([url]):
+        async with transport.HttpxTransport(transport.ItemDetails.from_str(url)) as tp:
+            assert tp is not None
+            _path, _name, content, _response = tp
             result = b""
             async for chunk in content:
                 result += chunk

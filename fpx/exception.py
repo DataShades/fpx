@@ -43,6 +43,9 @@ class ConfigError(FpxError):
 class TransportError(FpxError):
     pass
 
+class UrlNotAvailableError(TransportError):
+    pass
+
 
 async def handle_validation_error(request: Request, err: HandleValidationError):
     """Convert validation error into JSON response."""

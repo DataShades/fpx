@@ -4,7 +4,7 @@ import json
 import secrets
 import uuid
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 from sqlalchemy import JSON, Text
 from sqlalchemy.orm import (
@@ -57,14 +57,14 @@ class Ticket(Base):
     created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow())
 
     @property
-    def items(self):
+    def items(self) -> Iterable[str | dict[str, Any]]:
         try:
             return json.loads(self.content)
         except ValueError:
             return []
 
     @items.setter
-    def items(self, value):
+    def items(self, value: Iterable[str | dict[str, Any]]):
         self.content = json.dumps(value)
 
     def for_json(self, include_id: bool = False) -> dict[str, Any]:

@@ -5,7 +5,7 @@ import logging
 import os
 import time
 from io import RawIOBase
-from typing import AsyncIterable, cast
+from typing import AsyncIterable, cast, Any
 from zipfile import ZipFile, ZipInfo
 
 import httpx
@@ -28,7 +28,7 @@ class _Stream(RawIOBase):
     def writable(self):
         return True
 
-    def write(self, b):
+    def write(self, b: Any):
         if self.closed:
             msg = "Stream was closed!"
             raise ValueError(msg)
@@ -71,7 +71,7 @@ class Pipe(abc.ABC):
     async def __aenter__(self) -> Self:
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, *args: Any):
         return
 
     def content_type(self):
@@ -82,6 +82,7 @@ class Pipe(abc.ABC):
 
     @abc.abstractmethod
     async def chunks(self) -> AsyncIterable[bytes]:
+        yield b""
         raise NotImplementedError
 
 
@@ -97,49 +98,49 @@ class ZipPipe(Pipe):
         return self
 
     async def chunks(self) -> AsyncIterable[bytes]:
-        stream = _Stream()
-        with ZipFile(
-            stream,
-            mode="w",
-        ) as zf:
-            tp = transport.choose(self.request)
-            async for path, name, content, _resp in tp.stream(
-                self.ticket.items,
-            ):
-                entry = os.path.join(path, name)
-                log.debug("Add entry to ZIP archive: %s", entry)
-                z_info = ZipInfo(entry, time.gmtime()[:6])
-                with zf.open(z_info, mode="w", force_zip64=True) as dest:
-                    try:
-                        total = 0
-                        async for chunk in content:
-                            dest.write(chunk)
-                            total += len(chunk)
-                            log.debug(
-                                "+Chunk. %sMB(%sKB) of %s are added to the archive",
-                                total // 1024 // 1024,
-                                total // 1024,
+        stream = cast(Any, _Stream())
+        with ZipFile(stream, mode="w") as zf:
+            for item in self.ticket.items:
+                async with transport.choose(self.request, item) as tp:
+                    if not tp:
+                        log.warning("Skip item %s", item)
+                        continue
+                    path, name, content, _resp = tp
+
+                    entry = os.path.join(path, name)
+                    log.debug("Add entry to ZIP archive: %s", entry)
+                    z_info = ZipInfo(entry, time.gmtime()[:6])
+                    with zf.open(z_info, mode="w", force_zip64=True) as dest:
+                        try:
+                            total = 0
+                            async for chunk in content:
+                                dest.write(chunk)
+                                total += len(chunk)
+                                log.debug(
+                                    "+Chunk. %sMB(%sKB) of %s are added to the archive",
+                                    total // 1024 // 1024,
+                                    total // 1024,
+                                    name,
+                                )
+                                yield stream.get()
+
+                        except (TimeoutError, httpx.TimeoutException):
+                            log.exception(
+                                "TimeoutError while writing %s. Move to the next file",
+                                z_info,
+                            )
+
+                        except httpx.ReadError:
+                            log.exception(
+                                "Read error from file %s. Move to the next file",
                                 name,
                             )
-                            yield stream.get()
 
-                    except (TimeoutError, httpx.TimeoutException):
-                        log.exception(
-                            "TimeoutError while writing %s. Move to the next file",
-                            z_info,
-                        )
-
-                    except httpx.ReadError:
-                        log.exception(
-                            "Read error from file %s. Move to the next file",
-                            name,
-                        )
-
-                    except Exception:
-                        log.exception(
-                            "Unexpected error from file %s. Move to the next file",
-                            name,
-                        )
+                        except Exception:
+                            log.exception(
+                                "Unexpected error from file %s. Move to the next file",
+                                name,
+                            )
 
             zf.comment = b"Written by FPX"
         yield stream.get()
@@ -152,18 +153,28 @@ class SillyStreamPipe(Pipe):
         self._filename = None
 
     async def __aenter__(self):
-        tp = transport.choose(self.request)
-        async for _path, name, _content, resp in tp.stream(self.ticket.items):
-            self._filename = name
-            self._content_type = resp.headers.get("content-type")
-            break
+        for item in self.ticket.items:
+            async with transport.choose(self.request, item) as tp:
+                if not tp:
+                    log.warning("Skip item %s", item)
+                    continue
+
+                _path, name, _content, content_type = tp
+
+                self._filename = name
+                self._content_type = content_type
+                break
         return self
 
     async def chunks(self) -> AsyncIterable[bytes]:
-        tp = transport.choose(self.request)
-        async for _path, _name, content, _resp in tp.stream(self.ticket.items):
-            async for chunk in content:
-                yield chunk
+        for item in self.ticket.items:
+            async with transport.choose(self.request, item) as tp:
+                if not tp:
+                    log.warning("Skip item %s", item)
+                    continue
+                _path, _name, content, _resp = tp
+                async for chunk in content:
+                    yield chunk
 
 
 class StreamPipe(Pipe):
@@ -181,7 +192,7 @@ class StreamPipe(Pipe):
             break
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, *args: Any):
         async for _ in self._gen:
             pass
 
@@ -190,11 +201,15 @@ class StreamPipe(Pipe):
             yield cast(bytes, chunk)
 
     async def _crawl_file(self):
-        tp = transport.choose(self.request)
-        async for _path, name, content, resp in tp.stream(self.ticket.items):
+        for item in self.ticket.items:
+            async with transport.choose(self.request, item) as tp:
+                if not tp:
+                    log.warning("Skip item %s", item)
+                    continue
+                _path, name, content, content_type = tp
 
-            async def crawler(content=content):
-                async for chunk in content:
-                    yield chunk
+                async def crawler(content: Any = content):
+                    async for chunk in content:
+                        yield chunk
 
-            yield name, resp.headers.get("content-type"), crawler
+                yield name, content_type, crawler
