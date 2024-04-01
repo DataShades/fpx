@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.6.0](https://github.com/DataShades/fpx/releases/tag/v0.6.0) - 2024-04-01
+
+<small>[Compare with v0.5.8](https://github.com/DataShades/fpx/compare/v0.5.8...v0.6.0)</small>
+
+### Features
+
+- download AzureBlobs using Azure Blob client ([f0cd98c](https://github.com/DataShades/fpx/commit/f0cd98cde59f4ad3adb5db9ca2f475ad1c7a8819) by Sergey Motornyuk).
+
 ## [v0.5.8](https://github.com/DataShades/fpx/releases/tag/v0.5.8) - 2024-01-31
 
 <small>[Compare with v0.5.7](https://github.com/DataShades/fpx/compare/v0.5.7...v0.5.8)</small>
