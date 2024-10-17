@@ -1,3 +1,49 @@
+[build-system]
+requires = [ "setuptools",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fpx"
+version = "0.6.2post1"
+description = "Stream archiver/proxy"
+classifiers = [ "Development Status :: 3 - Alpha", "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11",]
+requires-python = ">=3.8"
+dependencies = [ "aiohttp[speedups]~=3.8.6", "alembic~=1.12.0", "asyncblink==0.3.2", "blinker==1.7.0", "click", "httpx~=0.23.0", "pyjwt", "sanic~=23.12.0", "sanic_ext~=23.12.0", "sqlalchemy~=2.0.22", "typing-extensions", "webargs-sanic~=2.3.5", "websockets>=10.0, <11.0",]
+authors = [
+    {name = "DataShades", email = "datashades@linkdigital.com.au"},
+    {name = "Sergey Motornyuk", email = "sergey.motornyuk@linkdigital.com.au"},
+]
+maintainers = [
+    {name = "DataShades", email = "datashades@linkdigital.com.au"},
+]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.license]
+text = "AGPL"
+
+[project.urls]
+Homepage = "https://github.com/DataShades/fpx"
+
+[project.optional-dependencies]
+postgresql = [ "psycopg2",]
+azure = [ "azure-storage-blob",]
+test = [ "aioresponses", "factory_boy", "pytest", "pytest-asyncio", "pytest-factoryboy", "pytest-httpx", "sanic-testing~=23.6.0",]
+
+[project.scripts]
+fpx = "fpx.cli:fpx"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.package-data]
+"*" = [ "alembic.ini", "migrations/**/*",]
+
+[tool.setuptools.packages]
+find = {}
+
 [tool.black]
 # line-length = 88
 # preview = true
