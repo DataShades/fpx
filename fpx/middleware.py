@@ -45,5 +45,4 @@ def db_session_close(request: Request, response: Response):
 def add_middlewares(app: App):
     app.on_request(db_session)
     app.on_request(authentication)
-
     app.on_response(db_session_close)

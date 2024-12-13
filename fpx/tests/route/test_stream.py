@@ -2,34 +2,34 @@ import jwt
 import pytest
 
 
-def test_no_client(rc, url_for):
-    _, resp = rc.get(url_for("stream.url", url="hello"))
+def test_no_client(test_client, url_for):
+    _, resp = test_client.get(url_for("stream.url", url="hello"))
     assert resp.status == 422
     assert "client" in resp.json["errors"]["query"]
 
 
-def test_not_real_client(rc, url_for):
-    _, resp = rc.get(url_for("stream.url", url="hello", client="test"))
+def test_not_real_client(test_client, url_for):
+    _, resp = test_client.get(url_for("stream.url", url="hello", client="test"))
     assert resp.status == 404
 
 
-def test_invalid_jwt(rc, url_for, client):
-    _, resp = rc.get(url_for("stream.url", url="hello", client=client.name))
+def test_invalid_jwt(test_client, url_for, client):
+    _, resp = test_client.get(url_for("stream.url", url="hello", client=client.name))
     assert resp.status == 422
 
 
-def test_valid_jwt_without_url(rc, url_for, client):
+def test_valid_jwt_without_url(test_client, url_for, client):
     encoded = jwt.encode(
         {"hello": "world"},
         client.id,
-        algorithm=rc.app.config.JWT_ALGORITHM,
+        algorithm=test_client.app.config.JWT_ALGORITHM,
     )
-    _, resp = rc.get(url_for("stream.url", url=encoded, client=client.name))
+    _, resp = test_client.get(url_for("stream.url", url=encoded, client=client.name))
     assert resp.status == 422
 
 
 @pytest.mark.usefixtures("all_transports")
-def test_valid_jwt(rc, url_for, client, rmock, faker):
+def test_valid_jwt(test_client, url_for, client, rmock, faker):
     url = faker.uri()
     body = faker.binary()
     content_type = "application/pdf"
@@ -40,9 +40,9 @@ def test_valid_jwt(rc, url_for, client, rmock, faker):
     encoded = jwt.encode(
         {"url": url},
         client.id,
-        algorithm=rc.app.config.JWT_ALGORITHM,
+        algorithm=test_client.app.config.JWT_ALGORITHM,
     )
-    _, resp = rc.get(url_for("stream.url", url=encoded, client=client.name))
+    _, resp = test_client.get(url_for("stream.url", url=encoded, client=client.name))
 
     assert resp.status == 200
     assert resp.content == body

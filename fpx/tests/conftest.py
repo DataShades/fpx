@@ -5,7 +5,6 @@ import pytest
 from aioresponses import aioresponses
 from pytest_factoryboy import register
 from sanic_testing import TestManager
-from sanic_testing.reusable import ReusableClient
 
 from fpx import model as m
 from fpx.app import make_app
@@ -67,7 +66,7 @@ def transport_name(request):
 def all_transports(monkeypatch, transport_name):
     """Run tests with all available transports.
 
-    Apply this fixture before `app`/`reusable_client`
+    Apply this fixture before `app`
     """
     monkeypatch.setenv("FPX_FPX_TRANSPORT", transport_name)
 
@@ -93,21 +92,6 @@ def test_client(app):
 def url_for(app):
     """URL generator."""
     return app.url_for
-
-
-@pytest.fixture()
-def reusable_client(app):
-    """Test client that reuse application during the test."""
-
-    client = ReusableClient(app)
-    with client:
-        yield client
-
-
-@pytest.fixture()
-def rc(reusable_client):
-    """Shorthand for `reusable_cleint`"""
-    return reusable_client
 
 
 @pytest.fixture()
