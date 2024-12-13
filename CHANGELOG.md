@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [v0.7.0](https://github.com/DataShades/fpx/releases/tag/v0.7.0) - 2024-12-13
+
+<small>[Compare with v0.6.2](https://github.com/DataShades/fpx/compare/v0.6.2...v0.7.0)</small>
+
+### Bug Fixes
+
+- unpin aiohttp dependency ([97c91c4](https://github.com/DataShades/fpx/commit/97c91c47debf74e47e1ed94b01431e78e65a8843) by Sergey Motornyuk).
+
+## [v0.6.2](https://github.com/DataShades/fpx/releases/tag/v0.6.2) - 2024-04-28
+
+<small>[Compare with v0.6.1](https://github.com/DataShades/fpx/compare/v0.6.1...v0.6.2)</small>
+
+### Bug Fixes
+
+- blinker >1.7 is not supported bby asyncblink ([b2695c7](https://github.com/DataShades/fpx/commit/b2695c7b600a54701f86c82799b82b05a68b975d) by Sergey Motornyuk).
+
+## [v0.6.1](https://github.com/DataShades/fpx/releases/tag/v0.6.1) - 2024-04-01
+
+<small>[Compare with v0.6.0](https://github.com/DataShades/fpx/compare/v0.6.0...v0.6.1)</small>
+
 ## [v0.6.0](https://github.com/DataShades/fpx/releases/tag/v0.6.0) - 2024-04-01
 
 <small>[Compare with v0.5.8](https://github.com/DataShades/fpx/compare/v0.5.8...v0.6.0)</small>
